@@ -128,6 +128,7 @@ main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
 #today-card .holiday { padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 #today-card .holiday:last-child { border-bottom: none; }
 .cat-tag { display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: middle; font-family: sans-serif; white-space: nowrap; }
+.country { color: var(--muted); font-size: 0.85em; }
 .cat-Christian { background: #4a3d6e; color: #ccc8e8; }
 .cat-National { background: #1a5c3a; color: #b8e8c8; }
 .cat-Roman { background: #6e3d3d; color: #e8c8c8; }
@@ -203,7 +204,17 @@ months.forEach((m, i) => { const opt = document.createElement('option'); opt.val
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function catTag(cat) {
-  return `<span class="cat-tag cat-${cat.replace(/[^a-zA-Z'\/]/g,'')}">${cat}</span>`;
+  return `<span class="cat-tag cat-${cat.replace(/[^a-zA-Z'\/]/g,'')}">${esc(cat)}</span>`;
+}
+function countrySuffix(h) {
+  return h.country ? ` <span class="country">(${esc(h.country)})</span>` : '';
+}
+function holidayLine(h) {
+  return `${catTag(h.category)} ${esc(h.name)}${countrySuffix(h)}`;
+}
+function holidayMatches(h, search) {
+  const q = search.toLowerCase();
+  return h.name.toLowerCase().includes(q) || (h.country && h.country.toLowerCase().includes(q));
 }
 
 function getHolidaysForDate(month, day) {
@@ -229,7 +240,7 @@ fetch('holidays.json').then(r => r.json()).then(data => {
   document.getElementById('today-date').textContent = `${months[todayMonth]} ${todayDay}`;
   const th = document.getElementById('today-holidays');
   if (todayHolidays.length) {
-    th.innerHTML = todayHolidays.map(h => `<div class="holiday">${catTag(h.category)} ${esc(h.name)}</div>`).join('');
+    th.innerHTML = todayHolidays.map(h => `<div class="holiday">${holidayLine(h)}</div>`).join('');
   } else {
     th.innerHTML = '<div class="holiday">No holiday found for today.</div>';
   }
@@ -251,14 +262,14 @@ function renderList() {
       if (!dayHolidays.length) continue;
       let filtered = dayHolidays;
       if (catFilterVal) filtered = filtered.filter(h => h.category === catFilterVal);
-      if (search) filtered = filtered.filter(h => h.name.toLowerCase().includes(search));
+      if (search) filtered = filtered.filter(h => holidayMatches(h, search));
       if (!filtered.length) continue;
       const div = document.createElement('div');
       div.className = 'day-entry';
-      const preview = filtered.slice(0, 2).map(h => `${catTag(h.category)} ${esc(h.name)}`).join('<br>');
+      const preview = filtered.slice(0, 2).map(holidayLine).join('<br>');
       div.innerHTML = `<div class="date-label">${months[m]} ${d}</div><div class="preview">${preview}</div>`;
       div.onclick = () => {
-        const all = dayHolidays.map(h => `${catTag(h.category)} ${esc(h.name)}`).join('<br>');
+        const all = dayHolidays.map(holidayLine).join('<br>');
         const modal = document.createElement('div');
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem';
         const box = document.createElement('div');

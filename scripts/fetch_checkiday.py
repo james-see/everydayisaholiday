@@ -66,13 +66,18 @@ def dates_to_fetch() -> list[date]:
 
 
 def to_entry(d: date, name: str) -> dict:
-    return {
+    entry = {
         "date": f"{d.month:02d}-{d.day:02d}",
         "month": d.month,
         "day": d.day,
         "name": name,
         "category": "Secular/Cultural",
     }
+    # "National … Day" observances are US informal calendar days;
+    # International/World are framed as global and omit country.
+    if name.startswith("National "):
+        entry["country"] = "United States"
+    return entry
 
 
 def main() -> int:

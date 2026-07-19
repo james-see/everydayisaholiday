@@ -24,7 +24,7 @@ Each entry contains:
 - `day` (1-31)
 - `name` (holiday name)
 - `category` (Christian, National, Roman, UN/International, Secular/Cultural, Pagan/Celtic, etc.)
-- `country` (for national holidays, the country name)
+- `country` (for country independence days and US-style `National …` observances; omitted for International/World Days)
 
 ## Key facts
 
