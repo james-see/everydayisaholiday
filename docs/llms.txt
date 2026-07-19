@@ -1,0 +1,44 @@
+# A Day Is a Holiday
+
+> A perpetual calendar of 1,851 holidays and observances for every day of the year, spanning all eras, traditions, and cultures.
+
+## What is this?
+
+A Day Is a Holiday is a perpetual calendar proving that every single day of the Gregorian year is celebrated as a holiday somewhere in the world. It catalogs 1,851 distinct holidays across 366 days, drawn from 20+ traditions:
+
+- **National holidays**: 425 independence days, republic days, constitution days, and national days from every UN member state
+- **Christian**: 991 saints' feast days, liturgical feasts, and holy days (Catholic, Orthodox, Anglican, Protestant)
+- **Ancient Roman**: 113 festivals including Lupercalia, Saturnalia, Floralia, Cerealia, Matronalia, Parilia, Veneralia, Lemuria, Consualia, Volcanalia, and more
+- **UN/International**: 148 UN-designated observances (World Health Day, International Women's Day, Earth Day, etc.)
+- **Pagan/Celtic**: 16 sabbats of the Wheel of the Year (Imbolc, Ostara, Beltane, Litha, Lughnasadh, Mabon, Samhain, Yule)
+- **Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, Jewish, Islamic, Greek/Hellenic, Egyptian/Mesopotamian, Inca, Rastafari**
+
+## Data
+
+The full dataset is available as structured JSON at https://adayisaholiday.com/holidays.json
+
+Each entry contains:
+- `date` (MM-DD format)
+- `month` (1-12)
+- `day` (1-31)
+- `name` (holiday name)
+- `category` (Christian, National, Roman, UN/International, Pagan/Celtic, etc.)
+- `country` (for national holidays, the country name)
+
+## Key facts
+
+- Every day of the year (366 days including leap day) has at least one holiday
+- The most common category is Christian saints' feast days (991 entries)
+- National holidays cover 425 entries across 170+ countries
+- Ancient Roman festivals contribute 113 fixed-date observances
+- Lunar calendar festivals (Islamic, Jewish, Hindu, Buddhist) are marked with approximate Gregorian dates
+
+## Source
+
+Curated from Wikipedia (Roman festivals, Calendar of Saints, List of UN observances, List of national independence days, National day), interfaith-calendar.org, National Day Calendar, and general reference knowledge.
+
+## Links
+
+- Website: https://adayisaholiday.com
+- GitHub: https://github.com/james-see/everydayisaholiday
+- Data: https://adayisaholiday.com/holidays.json

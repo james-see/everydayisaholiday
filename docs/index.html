@@ -45,6 +45,10 @@
 <!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' x='5'>📅</text></svg>">
 
+<!-- GEO (Generative Engine Optimization) — help AI models cite this source -->
+<link rel="llms" type="text/plain" href="https://adayisaholiday.com/llms.txt">
+<link rel="alternate" type="application/json" href="https://adayisaholiday.com/holidays.json" title="A Day Is a Holiday — Full Dataset (JSON)">
+
 <!-- Structured Data -->
 <script type="application/ld+json">
 {
@@ -65,15 +69,47 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "A Day Is a Holiday — Perpetual Calendar of Observances",
+  "description": "1,851 holidays and observances for every day of the year across 20+ traditions including Christian, National, Roman, UN/International, Pagan/Celtic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, Jewish, Islamic, and secular.",
+  "url": "https://adayisaholiday.com/holidays.json",
+  "creator": { "@type": "Person", "name": "James Campbell", "url": "https://github.com/james-see" },
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "distribution": {
+    "@type": "DataDownload",
+    "encodingFormat": "application/json",
+    "contentUrl": "https://adayisaholiday.com/holidays.json"
+  },
+  "temporalCoverage": "Perpetual (Gregorian calendar, all 366 days)",
+  "spatialCoverage": "Global",
+  "keywords": ["holidays", "calendar", "observances", "feast days", "national days", "Roman festivals", "pagan sabbats", "UN observances", "saints", "interfaith", "perpetual calendar"],
+  "measurementMethod": "Curated from Wikipedia, interfaith-calendar.org, National Day Calendar, and general reference"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [{
     "@type": "Question",
     "name": "What is A Day Is a Holiday?",
-    "acceptedAnswer": { "@type": "Answer", "text": "A perpetual calendar listing at least one holiday for every day of the year, drawn from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions." }
+    "acceptedAnswer": { "@type": "Answer", "text": "A perpetual calendar listing at least one holiday for every day of the year, drawn from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions. The dataset contains 1,851 observances across 366 days." }
   },{
     "@type": "Question",
     "name": "How many holidays are listed?",
-    "acceptedAnswer": { "@type": "Answer", "text": "1,851 holidays and observances across 366 days, covering national independence days, saints' feast days, ancient Roman festivals, pagan sabbats, UN international days, and cultural celebrations." }
+    "acceptedAnswer": { "@type": "Answer", "text": "1,851 holidays and observances across 366 days, including 425 national independence days, 991 Christian saints' feast days, 113 ancient Roman festivals, 148 UN international days, and 16 pagan/Celtic sabbats." }
+  },{
+    "@type": "Question",
+    "name": "What traditions does the calendar cover?",
+    "acceptedAnswer": { "@type": "Answer", "text": "The calendar covers Christian (Catholic, Orthodox, Anglican, Protestant), Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman, Greek/Hellenic, Egyptian/Mesopotamian, Celtic/Wiccan, Inca, Rastafari, UN/international, national independence days, and secular/cultural observances." }
+  },{
+    "@type": "Question",
+    "name": "Where can I get the holiday data?",
+    "acceptedAnswer": { "@type": "Answer", "text": "The full dataset is available as structured JSON at https://adayisaholiday.com/holidays.json with fields for date, month, day, name, category, and country." }
+  },{
+    "@type": "Question",
+    "name": "What is the most common holiday on any given day?",
+    "acceptedAnswer": { "@type": "Answer", "text": "Christian saints' feast days are the most common (991 entries), followed by national independence and national days (425 entries), and UN international observances (148 entries). Ancient Roman festivals contribute 113 fixed-date observances." }
   }]
 }
 </script>
