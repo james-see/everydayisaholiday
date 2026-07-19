@@ -2,9 +2,12 @@
 
 A website celebrating that every day of the year is a holiday somewhere — across all eras, traditions, and cultures.
 
+**Live:** https://adayisaholiday.com
+
 ## Overview
 
-A perpetual calendar of observances covering 366 days, drawing from:
+A perpetual calendar of **4,076** observances covering 366 days, drawing from:
+- Secular/cultural National Days (National Cheese Day, etc.)
 - Ancient Roman, Greek, Egyptian, Mesopotamian festivals
 - Celtic/Wiccan sabbats (Wheel of the Year)
 - Catholic/Orthodox saints' feast days
@@ -13,7 +16,15 @@ A perpetual calendar of observances covering 366 days, drawing from:
 - National independence days across all nations
 - Historical and cultural commemorations
 
+## Data
+
+- Dataset: [`docs/holidays.json`](docs/holidays.json)
+- Refresh National/International/World Days from Checkiday:
+
+```bash
+python3 scripts/fetch_checkiday.py
+```
+
 ## Status
 
-Project initialized 2026-07-19. Domain search in progress.
-
+Live on GitHub Pages (`docs/`) at adayisaholiday.com. Updated 2026-07-19.

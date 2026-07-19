@@ -1,11 +1,12 @@
 # A Day Is a Holiday
 
-> A perpetual calendar of 1,851 holidays and observances for every day of the year, spanning all eras, traditions, and cultures.
+> A perpetual calendar of 4,076 holidays and observances for every day of the year, spanning all eras, traditions, and cultures.
 
 ## What is this?
 
-A Day Is a Holiday is a perpetual calendar proving that every single day of the Gregorian year is celebrated as a holiday somewhere in the world. It catalogs 1,851 distinct holidays across 366 days, drawn from 20+ traditions:
+A Day Is a Holiday is a perpetual calendar proving that every single day of the Gregorian year is celebrated as a holiday somewhere in the world. It catalogs 4,076 distinct holidays across 366 days, drawn from 20+ traditions:
 
+- **Secular/Cultural**: 2,278 National, International, and World Day observances (e.g. National Cheese Day, National Pizza Day, World Coconut Day)
 - **National holidays**: 425 independence days, republic days, constitution days, and national days from every UN member state
 - **Christian**: 991 saints' feast days, liturgical feasts, and holy days (Catholic, Orthodox, Anglican, Protestant)
 - **Ancient Roman**: 113 festivals including Lupercalia, Saturnalia, Floralia, Cerealia, Matronalia, Parilia, Veneralia, Lemuria, Consualia, Volcanalia, and more
@@ -22,20 +23,21 @@ Each entry contains:
 - `month` (1-12)
 - `day` (1-31)
 - `name` (holiday name)
-- `category` (Christian, National, Roman, UN/International, Pagan/Celtic, etc.)
+- `category` (Christian, National, Roman, UN/International, Secular/Cultural, Pagan/Celtic, etc.)
 - `country` (for national holidays, the country name)
 
 ## Key facts
 
 - Every day of the year (366 days including leap day) has at least one holiday
-- The most common category is Christian saints' feast days (991 entries)
+- The most common category is Secular/Cultural National Days (2,278 entries)
 - National holidays cover 425 entries across 170+ countries
 - Ancient Roman festivals contribute 113 fixed-date observances
 - Lunar calendar festivals (Islamic, Jewish, Hindu, Buddhist) are marked with approximate Gregorian dates
+- Floating secular observances (e.g. National Doughnut Day) use their 2026 Gregorian dates in this perpetual calendar
 
 ## Source
 
-Curated from Wikipedia (Roman festivals, Calendar of Saints, List of UN observances, List of national independence days, National day), interfaith-calendar.org, National Day Calendar, and general reference knowledge.
+Curated from Wikipedia (Roman festivals, Calendar of Saints, List of UN observances, List of national independence days, National day), interfaith-calendar.org, National Day Calendar, Checkiday (National/International/World Day observances), and general reference knowledge.
 
 ## Links
 
