@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Day Is a Holiday — Every Day Celebrated</title>
+<meta name="description" content="A perpetual calendar of observances — every day of the year is a holiday somewhere. From ancient Roman festivals to modern UN observances, saints' feasts to pagan sabbats.">
+<style>
+:root { --bg: #1a1a2e; --fg: #e0e0e0; --accent: #e94560; --card: #16213e; --muted: #8a8a9a; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+header { text-align: center; padding: 3rem 1rem 2rem; }
+header h1 { font-size: 2.5rem; color: var(--accent); margin-bottom: 0.5rem; }
+header p { color: var(--muted); font-style: italic; max-width: 600px; margin: 0 auto; }
+main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
+#today-card { background: var(--card); border-left: 4px solid var(--accent); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+#today-card .date { font-size: 1.3rem; color: var(--accent); font-weight: bold; }
+#today-card .holidays { margin-top: 1rem; }
+#today-card .holiday { padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#today-card .holiday:last-child { border-bottom: none; }
+#today-card .tradition { font-size: 0.8rem; color: var(--muted); }
+.controls { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.controls input, .controls select { padding: 0.6rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); font-family: inherit; }
+.controls input { flex: 1; min-width: 120px; }
+#calendar-list .day-entry { background: var(--card); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s; }
+#calendar-list .day-entry:hover { background: #1a2745; }
+#calendar-list .day-entry .date-label { font-weight: bold; color: var(--accent); }
+#calendar-list .day-entry .preview { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; }
+footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+<h1>A Day Is a Holiday</h1>
+<p>Every day of the year is a holiday somewhere — across all eras, traditions, and cultures.</p>
+</header>
+<main>
+<div id="today-card">
+<div class="date" id="today-date">Loading...</div>
+<div class="holidays" id="today-holidays"></div>
+</div>
+<div class="controls">
+<input type="text" id="search" placeholder="Search holidays...">
+<select id="month-filter"><option value="">All months</option></select>
+</div>
+<div id="calendar-list"></div>
+</main>
+<footer>
+<p>Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, and national traditions.</p>
+<p><a href="https://github.com/james-see/everydayisaholiday">GitHub</a> · Built by <a href="https://github.com/james-see">@james-see</a></p>
+</footer>
+<script src="holidays.js"></script>
+<script>
+const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const monthFilter = document.getElementById('month-filter');
+months.forEach((m, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = m; monthFilter.appendChild(opt); });
+
+// Today's date
+const now = new Date();
+const todayMonth = now.getMonth();
+const todayDay = now.getDate();
+const todayKey = `${todayMonth+1}-${todayDay}`;
+const todayEntry = HOLIDAYS[todayKey];
+document.getElementById('today-date').textContent = `${months[todayMonth]} ${todayDay}`;
+if (todayEntry) {
+  const holidays = todayEntry.split(' — ');
+  document.getElementById('today-holidays').innerHTML = holidays.map(h => `<div class="holiday">${h}</div>`).join('');
+} else {
+  document.getElementById('today-holidays').innerHTML = '<div class="holiday">No holiday found for today.</div>';
+}
+
+// Calendar list
+function renderList() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const monthFilterVal = document.getElementById('month-filter').value;
+  const list = document.getElementById('calendar-list');
+  list.innerHTML = '';
+  let count = 0;
+  for (let m = 0; m < 12; m++) {
+    if (monthFilterVal !== '' && parseInt(monthFilterVal) !== m) continue;
+    const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
+    for (let d = 1; d <= daysInMonth[m]; d++) {
+      const key = `${m+1}-${d}`;
+      const entry = HOLIDAYS[key];
+      if (!entry) continue;
+      if (search && !entry.toLowerCase().includes(search)) continue;
+      count++;
+      if (count > 100) continue; // limit DOM
+      const div = document.createElement('div');
+      div.className = 'day-entry';
+      const preview = entry.split(' — ').slice(0, 2).join(' — ');
+      div.innerHTML = `<div class="date-label">${months[m]} ${d}</div><div class="preview">${preview}</div>`;
+      div.onclick = () => {
+        const holidays = entry.split(' — ');
+        alert(`${months[m]} ${d}\n\n${holidays.map(h => '• ' + h).join('\n')}`);
+      };
+      list.appendChild(div);
+    }
+  }
+  if (count > 100) {
+    const note = document.createElement('div');
+    note.style.cssText = 'text-align:center;color:var(--muted);padding:1rem;';
+    note.textContent = `Showing 100 of ${count} results. Narrow your search to see more.`;
+    list.appendChild(note);
+  }
+}
+document.getElementById('search').addEventListener('input', renderList);
+document.getElementById('month-filter').addEventListener('change', renderList);
+renderList();
+</script>
+</body>
+</html>
