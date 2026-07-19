@@ -18,7 +18,27 @@ main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
 #today-card .holidays { margin-top: 1rem; }
 #today-card .holiday { padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 #today-card .holiday:last-child { border-bottom: none; }
-#today-card .tradition { font-size: 0.8rem; color: var(--muted); }
+.cat-tag { display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: middle; font-family: sans-serif; }
+.cat-Christian { background: #4a3d6e; color: #ccc8e8; }
+.cat-National { background: #1a5c3a; color: #b8e8c8; }
+.cat-Roman { background: #6e3d3d; color: #e8c8c8; }
+.cat-Pagan\/Celtic { background: #3d6e4a; color: #c8e8d0; }
+.cat-UN\/International { background: #3d5a6e; color: #c8d8e8; }
+.cat-Secular\/Cultural { background: #6e5c3d; color: #e8dcc8; }
+.cat-Jewish { background: #3d3d6e; color: #c8c8e8; }
+.cat-Islamic { background: #3d6e6e; color: #c8e8e8; }
+.cat-Hindu { background: #6e4a3d; color: #e8ccc8; }
+.cat-Buddhist { background: #6e6e3d; color: #e8e8c8; }
+.cat-Sikh { background: #5c3d6e; color: #dcc8e8; }
+.cat-Jain { background: #4a6e3d; color: #c8e8c8; }
+.cat-Zoroastrian { background: #6e3d5c; color: #e8c8d8; }
+.cat-Bahá'í { background: #3d6e5c; color: #c8e8d8; }
+.cat-Shinto\/Japanese { background: #6e3d4a; color: #e8c8cc; }
+.cat-Greek\/Hellenic { background: #5a6e3d; color: #d8e8c8; }
+.cat-Ancient\/Egyptian\/Mesopotamian { background: #6e5a3d; color: #e8dcc8; }
+.cat-Inca { background: #5a3d6e; color: #d8c8e8; }
+.cat-Rastafari { background: #3d6e3d; color: #c8e8c8; }
+.cat-Other { background: #444; color: #aaa; }
 .controls { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .controls input, .controls select { padding: 0.6rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); font-family: inherit; }
 .controls input { flex: 1; min-width: 120px; }
@@ -43,56 +63,89 @@ footer a { color: var(--accent); text-decoration: none; }
 <div class="controls">
 <input type="text" id="search" placeholder="Search holidays...">
 <select id="month-filter"><option value="">All months</option></select>
+<select id="cat-filter"><option value="">All categories</option></select>
 </div>
 <div id="calendar-list"></div>
 </main>
 <footer>
-<p>Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, and national traditions.</p>
+<p>Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions.</p>
 <p><a href="https://github.com/james-see/everydayisaholiday">GitHub</a> · Built by <a href="https://github.com/james-see">@james-see</a></p>
 </footer>
-<script src="holidays.js"></script>
 <script>
+let HOLIDAYS = [];
 const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
+
+// Populate filters
 const monthFilter = document.getElementById('month-filter');
 months.forEach((m, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = m; monthFilter.appendChild(opt); });
 
-// Today's date
-const now = new Date();
-const todayMonth = now.getMonth();
-const todayDay = now.getDate();
-const todayKey = `${todayMonth+1}-${todayDay}`;
-const todayEntry = HOLIDAYS[todayKey];
-document.getElementById('today-date').textContent = `${months[todayMonth]} ${todayDay}`;
-if (todayEntry) {
-  const holidays = todayEntry.split(' — ');
-  document.getElementById('today-holidays').innerHTML = holidays.map(h => `<div class="holiday">${h}</div>`).join('');
-} else {
-  document.getElementById('today-holidays').innerHTML = '<div class="holiday">No holiday found for today.</div>';
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function catTag(cat) {
+  return `<span class="cat-tag cat-${cat.replace(/[^a-zA-Z'\/]/g,'')}">${cat}</span>`;
 }
+
+function getHolidaysForDate(month, day) {
+  const key = `${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  return HOLIDAYS.filter(h => h.date === key);
+}
+
+// Load JSON
+fetch('holidays.json').then(r => r.json()).then(data => {
+  HOLIDAYS = data;
+
+  // Populate category filter
+  const cats = [...new Set(data.map(h => h.category))].sort();
+  const catFilter = document.getElementById('cat-filter');
+  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; catFilter.appendChild(opt); });
+
+  // Today's date
+  const now = new Date();
+  const todayMonth = now.getMonth();
+  const todayDay = now.getDate();
+  const todayHolidays = getHolidaysForDate(todayMonth, todayDay);
+  document.getElementById('today-date').textContent = `${months[todayMonth]} ${todayDay}`;
+  const th = document.getElementById('today-holidays');
+  if (todayHolidays.length) {
+    th.innerHTML = todayHolidays.map(h => `<div class="holiday">${catTag(h.category)} ${esc(h.name)}</div>`).join('');
+  } else {
+    th.innerHTML = '<div class="holiday">No holiday found for today.</div>';
+  }
+
+  renderList();
+});
 
 // Calendar list
 function renderList() {
   const search = document.getElementById('search').value.toLowerCase();
   const monthFilterVal = document.getElementById('month-filter').value;
+  const catFilterVal = document.getElementById('cat-filter').value;
   const list = document.getElementById('calendar-list');
   list.innerHTML = '';
-  let count = 0;
   for (let m = 0; m < 12; m++) {
     if (monthFilterVal !== '' && parseInt(monthFilterVal) !== m) continue;
-    const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
     for (let d = 1; d <= daysInMonth[m]; d++) {
-      const key = `${m+1}-${d}`;
-      const entry = HOLIDAYS[key];
-      if (!entry) continue;
-      if (search && !entry.toLowerCase().includes(search)) continue;
-      count++;
+      const dayHolidays = getHolidaysForDate(m, d);
+      if (!dayHolidays.length) continue;
+      let filtered = dayHolidays;
+      if (catFilterVal) filtered = filtered.filter(h => h.category === catFilterVal);
+      if (search) filtered = filtered.filter(h => h.name.toLowerCase().includes(search));
+      if (!filtered.length) continue;
       const div = document.createElement('div');
       div.className = 'day-entry';
-      const preview = entry.split(' — ').slice(0, 2).join(' — ');
+      const preview = filtered.slice(0, 2).map(h => `${catTag(h.category)} ${esc(h.name)}`).join('<br>');
       div.innerHTML = `<div class="date-label">${months[m]} ${d}</div><div class="preview">${preview}</div>`;
       div.onclick = () => {
-        const holidays = entry.split(' — ');
-        alert(`${months[m]} ${d}\n\n${holidays.map(h => '• ' + h).join('\n')}`);
+        const all = dayHolidays.map(h => `${catTag(h.category)} ${esc(h.name)}`).join('<br>');
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer';
+        const box = document.createElement('div');
+        box.style.cssText = 'background:var(--card);border-radius:12px;padding:2rem;max-width:500px;max-height:80vh;overflow-y:auto;border-left:4px solid var(--accent)';
+        box.innerHTML = `<div class="date-label" style="font-size:1.2rem;margin-bottom:1rem">${months[m]} ${d} — ${dayHolidays.length} holidays</div><div style="line-height:2">${all}</div>`;
+        modal.appendChild(box);
+        modal.onclick = () => modal.remove();
+        document.body.appendChild(modal);
       };
       list.appendChild(div);
     }
@@ -100,7 +153,7 @@ function renderList() {
 }
 document.getElementById('search').addEventListener('input', renderList);
 document.getElementById('month-filter').addEventListener('change', renderList);
-renderList();
+document.getElementById('cat-filter').addEventListener('change', renderList);
 </script>
 </body>
 </html>
