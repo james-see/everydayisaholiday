@@ -2,23 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A Day Is a Holiday — Every Day Celebrated</title>
-<meta name="description" content="A perpetual calendar of observances — every day of the year is a holiday somewhere. From ancient Roman festivals to modern UN observances, saints' feasts to pagan sabbats.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+<!-- Primary SEO -->
+<title>A Day Is a Holiday — Every Day Celebrated Across All Traditions</title>
+<meta name="description" content="A perpetual calendar of 1,851 holidays, feasts, and observances for every day of the year — from ancient Roman festivals and Celtic sabbats to saints' feast days, national independence days, UN observances, and cultural celebrations across all eras and traditions.">
+<meta name="keywords" content="holiday calendar, every day is a holiday, daily holiday, perpetual calendar, national days, saints feast days, Roman festivals, pagan sabbats, UN observances, world holidays, independence days, religious calendar, interfaith calendar">
+<meta name="author" content="James Campbell">
+<link rel="canonical" href="https://adayisaholiday.com/">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://adayisaholiday.com/">
+<meta property="og:title" content="A Day Is a Holiday — Every Day Celebrated">
+<meta property="og:description" content="Every day of the year is a holiday somewhere. A perpetual calendar of 1,851 observances across all eras, traditions, and cultures — Roman festivals, saints' feasts, national days, UN observances, pagan sabbats, and more.">
+<meta property="og:image" content="https://adayisaholiday.com/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="A Day Is a Holiday">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://adayisaholiday.com/">
+<meta name="twitter:title" content="A Day Is a Holiday — Every Day Celebrated">
+<meta name="twitter:description" content="Every day of the year is a holiday somewhere. 1,851 observances across all eras, traditions, and cultures.">
+<meta name="twitter:image" content="https://adayisaholiday.com/og-card.png">
+<meta name="twitter:creator" content="@james-see">
+
+<!-- Theme color for mobile browsers -->
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="A Day Is a Holiday">
+
+<!-- Geo SEO -->
+<meta name="geo.region" content="US-VA">
+<meta name="geo.placename" content="Arlington, Virginia">
+<meta name="geo.position" content="38.88;-77.09">
+<meta name="ICBM" content="38.88, -77.09">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' x='5'>📅</text></svg>">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "A Day Is a Holiday",
+  "url": "https://adayisaholiday.com/",
+  "description": "A perpetual calendar of observances for every day of the year across all eras, traditions, and cultures.",
+  "author": { "@type": "Person", "name": "James Campbell", "url": "https://github.com/james-see" },
+  "publisher": { "@type": "Person", "name": "James Campbell" },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://adayisaholiday.com/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "What is A Day Is a Holiday?",
+    "acceptedAnswer": { "@type": "Answer", "text": "A perpetual calendar listing at least one holiday for every day of the year, drawn from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions." }
+  },{
+    "@type": "Question",
+    "name": "How many holidays are listed?",
+    "acceptedAnswer": { "@type": "Answer", "text": "1,851 holidays and observances across 366 days, covering national independence days, saints' feast days, ancient Roman festivals, pagan sabbats, UN international days, and cultural celebrations." }
+  }]
+}
+</script>
+
 <style>
 :root { --bg: #1a1a2e; --fg: #e0e0e0; --accent: #e94560; --card: #16213e; --muted: #8a8a9a; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--fg); line-height: 1.6; -webkit-text-size-adjust: 100%; }
 header { text-align: center; padding: 3rem 1rem 2rem; }
-header h1 { font-size: 2.5rem; color: var(--accent); margin-bottom: 0.5rem; }
-header p { color: var(--muted); font-style: italic; max-width: 600px; margin: 0 auto; }
+header h1 { font-size: clamp(1.6rem, 6vw, 2.5rem); color: var(--accent); margin-bottom: 0.5rem; }
+header p { color: var(--muted); font-style: italic; max-width: 600px; margin: 0 auto; font-size: clamp(0.85rem, 3vw, 1rem); }
 main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
 #today-card { background: var(--card); border-left: 4px solid var(--accent); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
-#today-card .date { font-size: 1.3rem; color: var(--accent); font-weight: bold; }
+#today-card .date { font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--accent); font-weight: bold; }
 #today-card .holidays { margin-top: 1rem; }
-#today-card .holiday { padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#today-card .holiday { padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 #today-card .holiday:last-child { border-bottom: none; }
-.cat-tag { display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: middle; font-family: sans-serif; }
+.cat-tag { display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 3px; margin-right: 0.3rem; vertical-align: middle; font-family: sans-serif; white-space: nowrap; }
 .cat-Christian { background: #4a3d6e; color: #ccc8e8; }
 .cat-National { background: #1a5c3a; color: #b8e8c8; }
 .cat-Roman { background: #6e3d3d; color: #e8c8c8; }
@@ -40,14 +113,26 @@ main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
 .cat-Rastafari { background: #3d6e3d; color: #c8e8c8; }
 .cat-Other { background: #444; color: #aaa; }
 .controls { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.controls input, .controls select { padding: 0.6rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); font-family: inherit; }
+.controls input, .controls select { padding: 0.6rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); font-family: inherit; font-size: 16px; }
 .controls input { flex: 1; min-width: 120px; }
 #calendar-list .day-entry { background: var(--card); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.2s; }
 #calendar-list .day-entry:hover { background: #1a2745; }
+#calendar-list .day-entry:active { background: #1a2745; }
 #calendar-list .day-entry .date-label { font-weight: bold; color: var(--accent); }
 #calendar-list .day-entry .preview { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
-footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; }
+footer { text-align: center; padding: 2rem 1rem; color: var(--muted); font-size: 0.85rem; }
 footer a { color: var(--accent); text-decoration: none; }
+
+/* Mobile */
+@media (max-width: 600px) {
+  header { padding: 2rem 1rem 1.5rem; }
+  main { padding: 0 0.75rem 2rem; }
+  #today-card { padding: 1rem; }
+  .controls input { min-width: 100px; }
+  .controls select { flex: 1; min-width: 90px; }
+  #calendar-list .day-entry { padding: 0.75rem 1rem; }
+  .cat-tag { font-size: 0.6rem; padding: 0.05rem 0.4rem; }
+}
 </style>
 </head>
 <body>
@@ -68,7 +153,7 @@ footer a { color: var(--accent); text-decoration: none; }
 <div id="calendar-list"></div>
 </main>
 <footer>
-<p>Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions.</p>
+<p>1,851 holidays across 366 days. Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular traditions.</p>
 <p><a href="https://github.com/james-see/everydayisaholiday">GitHub</a> · Built by <a href="https://github.com/james-see">@james-see</a></p>
 </footer>
 <script>
@@ -76,7 +161,6 @@ let HOLIDAYS = [];
 const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
 
-// Populate filters
 const monthFilter = document.getElementById('month-filter');
 months.forEach((m, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = m; monthFilter.appendChild(opt); });
 
@@ -91,16 +175,17 @@ function getHolidaysForDate(month, day) {
   return HOLIDAYS.filter(h => h.date === key);
 }
 
-// Load JSON
+// Check for ?q= search param
+const urlParams = new URLSearchParams(window.location.search);
+const initialSearch = urlParams.get('q') || '';
+
 fetch('holidays.json').then(r => r.json()).then(data => {
   HOLIDAYS = data;
 
-  // Populate category filter
   const cats = [...new Set(data.map(h => h.category))].sort();
   const catFilter = document.getElementById('cat-filter');
   cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; catFilter.appendChild(opt); });
 
-  // Today's date
   const now = new Date();
   const todayMonth = now.getMonth();
   const todayDay = now.getDate();
@@ -113,10 +198,10 @@ fetch('holidays.json').then(r => r.json()).then(data => {
     th.innerHTML = '<div class="holiday">No holiday found for today.</div>';
   }
 
+  if (initialSearch) document.getElementById('search').value = initialSearch;
   renderList();
 });
 
-// Calendar list
 function renderList() {
   const search = document.getElementById('search').value.toLowerCase();
   const monthFilterVal = document.getElementById('month-filter').value;
@@ -139,9 +224,9 @@ function renderList() {
       div.onclick = () => {
         const all = dayHolidays.map(h => `${catTag(h.category)} ${esc(h.name)}`).join('<br>');
         const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem';
         const box = document.createElement('div');
-        box.style.cssText = 'background:var(--card);border-radius:12px;padding:2rem;max-width:500px;max-height:80vh;overflow-y:auto;border-left:4px solid var(--accent)';
+        box.style.cssText = 'background:var(--card);border-radius:12px;padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;border-left:4px solid var(--accent)';
         box.innerHTML = `<div class="date-label" style="font-size:1.2rem;margin-bottom:1rem">${months[m]} ${d} — ${dayHolidays.length} holidays</div><div style="line-height:2">${all}</div>`;
         modal.appendChild(box);
         modal.onclick = () => modal.remove();
