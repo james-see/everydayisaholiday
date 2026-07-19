@@ -86,7 +86,6 @@ function renderList() {
       if (!entry) continue;
       if (search && !entry.toLowerCase().includes(search)) continue;
       count++;
-      if (count > 100) continue; // limit DOM
       const div = document.createElement('div');
       div.className = 'day-entry';
       const preview = entry.split(' — ').slice(0, 2).join(' — ');
@@ -97,12 +96,6 @@ function renderList() {
       };
       list.appendChild(div);
     }
-  }
-  if (count > 100) {
-    const note = document.createElement('div');
-    note.style.cssText = 'text-align:center;color:var(--muted);padding:1rem;';
-    note.textContent = `Showing 100 of ${count} results. Narrow your search to see more.`;
-    list.appendChild(note);
   }
 }
 document.getElementById('search').addEventListener('input', renderList);
