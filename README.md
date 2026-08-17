@@ -27,4 +27,4 @@ python3 scripts/fetch_checkiday.py
 
 ## Status
 
-Live on GitHub Pages (`docs/`) at adayisaholiday.com. Updated 2026-07-19.
+Live on the VPS at adayisaholiday.com (Caddy). Push to `main` deploys `docs/` via GitHub Actions.
