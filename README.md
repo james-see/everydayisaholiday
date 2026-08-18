@@ -25,6 +25,10 @@ A perpetual calendar of **4,076** observances covering 366 days, drawing from:
 python3 scripts/fetch_checkiday.py
 ```
 
+## Architecture
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): browser SQLite WASM for holiday cache/offline; VPS DuckDB + SQLite; Go gin systemd API on `127.0.0.1:8083` behind Caddy. No Postgres.
+
 ## Status
 
 Live on the VPS at adayisaholiday.com (Caddy). Push to `main` deploys `docs/` via GitHub Actions.
