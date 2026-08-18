@@ -48,28 +48,26 @@ jobs:
           rsync -avz api/deploy/adayisaholiday-api.service \
             jc@138.197.180.211:/home/jc/.config/systemd/user/adayisaholiday-api.service
 
-          ssh jc@138.197.180.211 '
-            set -e
-            if [ ! -f /home/jc/adayisaholidaycom/.env ]; then
-              umask 077
-              SECRET=$(openssl rand -hex 32)
-              cat > /home/jc/adayisaholidaycom/.env <<EOF
-LISTEN_ADDR=127.0.0.1:8083
-DATABASE_PATH=/home/jc/adayisaholidaycom/data/accounts.db
-PUBLIC_BASE_URL=https://adayisaholiday.com
-COOKIE_SECURE=true
-SESSION_TTL=720h
-VERIFY_TTL=48h
-RESET_TTL=2h
-SESSION_SECRET=$SECRET
-EXPOSE_VERIFY_TOKEN=false
-MAIL_FROM=A Day Is a Holiday <noreply@adayisaholiday.com>
-GIN_MODE=release
-EOF
-              chmod 600 /home/jc/adayisaholidaycom/.env
-            fi
-            systemctl --user daemon-reload
-            systemctl --user enable --now adayisaholiday-api.service
-            systemctl --user restart adayisaholiday-api.service
-            systemctl --user is-active adayisaholiday-api.service
-          '
+          ssh jc@138.197.180.211 "set -e
+          if [ ! -f /home/jc/adayisaholidaycom/.env ]; then
+            umask 077
+            SECRET=\$(openssl rand -hex 32)
+            printf '%s\n' \
+              'LISTEN_ADDR=127.0.0.1:8083' \
+              'DATABASE_PATH=/home/jc/adayisaholidaycom/data/accounts.db' \
+              'PUBLIC_BASE_URL=https://adayisaholiday.com' \
+              'COOKIE_SECURE=true' \
+              'SESSION_TTL=720h' \
+              'VERIFY_TTL=48h' \
+              'RESET_TTL=2h' \
+              \"SESSION_SECRET=\$SECRET\" \
+              'EXPOSE_VERIFY_TOKEN=false' \
+              'MAIL_FROM=A Day Is a Holiday <noreply@adayisaholiday.com>' \
+              'GIN_MODE=release' \
+              > /home/jc/adayisaholidaycom/.env
+            chmod 600 /home/jc/adayisaholidaycom/.env
+          fi
+          systemctl --user daemon-reload
+          systemctl --user enable --now adayisaholiday-api.service
+          systemctl --user restart adayisaholiday-api.service
+          systemctl --user is-active adayisaholiday-api.service"
