@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account — A Day Is a Holiday</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://adayisaholiday.com/account.html">
+<style>
+:root { --bg: #1a1a2e; --fg: #e0e0e0; --accent: #e94560; --card: #16213e; --muted: #8a8a9a; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--fg); line-height: 1.6; min-height: 100vh; }
+header { text-align: center; padding: 2.5rem 1rem 1.5rem; }
+header a { color: var(--accent); text-decoration: none; font-size: clamp(1.4rem, 5vw, 2rem); }
+header p { color: var(--muted); margin-top: 0.4rem; font-style: italic; }
+main { max-width: 420px; margin: 0 auto; padding: 0 1rem 3rem; }
+.panel { background: var(--card); border-radius: 8px; border-left: 4px solid var(--accent); padding: 1.5rem; margin-bottom: 1rem; }
+.panel h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--accent); }
+label { display: block; font-size: 0.9rem; color: var(--muted); margin: 0.75rem 0 0.3rem; }
+input { width: 100%; padding: 0.65rem 0.75rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); font-size: 16px; font-family: inherit; }
+button, .btn { display: inline-block; margin-top: 1rem; padding: 0.65rem 1.1rem; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-family: inherit; font-size: 1rem; cursor: pointer; text-decoration: none; }
+button.secondary { background: transparent; border: 1px solid var(--muted); color: var(--fg); margin-left: 0.5rem; }
+.msg { margin-top: 0.75rem; font-size: 0.9rem; }
+.msg.err { color: #ff8a9a; }
+.msg.ok { color: #9ae6b4; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.tabs button { margin-top: 0; background: transparent; border: 1px solid var(--muted); color: var(--fg); }
+.tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hidden { display: none; }
+.user-line { color: var(--muted); margin-bottom: 0.75rem; }
+footer { text-align: center; padding: 1rem; color: var(--muted); font-size: 0.85rem; }
+footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+<a href="/">A Day Is a Holiday</a>
+<p>Account</p>
+</header>
+<main>
+<div id="session-panel" class="panel hidden">
+  <h2>Signed in</h2>
+  <p class="user-line" id="user-email"></p>
+  <button type="button" id="logout-btn">Log out</button>
+  <a class="btn secondary" href="/">Back to calendar</a>
+</div>
+
+<div id="auth-panel" class="panel">
+  <div class="tabs">
+    <button type="button" class="active" data-tab="login">Log in</button>
+    <button type="button" data-tab="signup">Sign up</button>
+    <button type="button" data-tab="forgot">Forgot</button>
+    <button type="button" data-tab="reset" id="reset-tab" class="hidden">Reset</button>
+  </div>
+
+  <form id="login-form">
+    <h2>Log in</h2>
+    <label for="login-email">Email</label>
+    <input id="login-email" type="email" autocomplete="username" required>
+    <label for="login-password">Password</label>
+    <input id="login-password" type="password" autocomplete="current-password" required minlength="10">
+    <button type="submit">Log in</button>
+    <p class="msg" id="login-msg"></p>
+  </form>
+
+  <form id="signup-form" class="hidden">
+    <h2>Create account</h2>
+    <label for="signup-email">Email</label>
+    <input id="signup-email" type="email" autocomplete="username" required>
+    <label for="signup-password">Password (10+ characters)</label>
+    <input id="signup-password" type="password" autocomplete="new-password" required minlength="10">
+    <button type="submit">Sign up</button>
+    <p class="msg" id="signup-msg"></p>
+  </form>
+
+  <form id="forgot-form" class="hidden">
+    <h2>Forgot password</h2>
+    <label for="forgot-email">Email</label>
+    <input id="forgot-email" type="email" autocomplete="username" required>
+    <button type="submit">Send reset link</button>
+    <p class="msg" id="forgot-msg"></p>
+  </form>
+
+  <form id="reset-form" class="hidden">
+    <h2>Set new password</h2>
+    <label for="reset-password">New password</label>
+    <input id="reset-password" type="password" autocomplete="new-password" required minlength="10">
+    <button type="submit">Update password</button>
+    <p class="msg" id="reset-msg"></p>
+  </form>
+</div>
+</main>
+<footer>
+<p><a href="/">Calendar</a> · <a href="https://github.com/james-see/everydayisaholiday">GitHub</a></p>
+</footer>
+<script type="module">
+const params = new URLSearchParams(location.search);
+const forms = {
+  login: document.getElementById('login-form'),
+  signup: document.getElementById('signup-form'),
+  forgot: document.getElementById('forgot-form'),
+  reset: document.getElementById('reset-form'),
+};
+
+function showTab(name) {
+  for (const [k, el] of Object.entries(forms)) el.classList.toggle('hidden', k !== name);
+  document.querySelectorAll('.tabs button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.tab === name);
+  });
+}
+
+document.querySelectorAll('.tabs button').forEach((b) => {
+  b.addEventListener('click', () => showTab(b.dataset.tab));
+});
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { res, data };
+}
+
+function setMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text || '';
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function refreshSession() {
+  const { res, data } = await api('/auth/me');
+  const authed = res.ok;
+  document.getElementById('session-panel').classList.toggle('hidden', !authed);
+  document.getElementById('auth-panel').classList.toggle('hidden', authed);
+  if (authed) {
+    document.getElementById('user-email').textContent = data.email;
+  }
+  return authed;
+}
+
+forms.login.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { res, data } = await api('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-password').value,
+    }),
+  });
+  if (!res.ok) {
+    setMsg('login-msg', data.error || 'Login failed', false);
+    return;
+  }
+  setMsg('login-msg', 'Welcome back.', true);
+  await refreshSession();
+});
+
+forms.signup.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { res, data } = await api('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: document.getElementById('signup-email').value,
+      password: document.getElementById('signup-password').value,
+    }),
+  });
+  if (!res.ok) {
+    setMsg('signup-msg', data.error || 'Signup failed', false);
+    return;
+  }
+  let msg = data.message || 'Check your email to verify.';
+  if (data.verify_url) msg += ' Dev verify: ' + data.verify_url;
+  setMsg('signup-msg', msg, true);
+});
+
+forms.forgot.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { res, data } = await api('/auth/forgot', {
+    method: 'POST',
+    body: JSON.stringify({ email: document.getElementById('forgot-email').value }),
+  });
+  setMsg('forgot-msg', data.message || data.error || (res.ok ? 'Sent.' : 'Failed'), res.ok);
+  if (data.reset_url) setMsg('forgot-msg', (data.message || '') + ' Dev: ' + data.reset_url, true);
+});
+
+forms.reset.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const token = params.get('reset');
+  const { res, data } = await api('/auth/reset', {
+    method: 'POST',
+    body: JSON.stringify({
+      token,
+      password: document.getElementById('reset-password').value,
+    }),
+  });
+  if (!res.ok) {
+    setMsg('reset-msg', data.error || 'Reset failed', false);
+    return;
+  }
+  setMsg('reset-msg', 'Password updated. You can log in.', true);
+  showTab('login');
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST', body: '{}' });
+  await refreshSession();
+  showTab('login');
+});
+
+if (params.get('verified') === '1') {
+  setMsg('login-msg', 'Email verified — you are signed in.', true);
+}
+if (params.get('reset')) {
+  document.getElementById('reset-tab').classList.remove('hidden');
+  showTab('reset');
+}
+
+await refreshSession();
+</script>
+</body>
+</html>

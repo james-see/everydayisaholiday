@@ -1,0 +1,15 @@
+[Unit]
+Description=A Day Is a Holiday API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jc/adayisaholidaycom
+ExecStart=/home/jc/adayisaholidaycom/bin/adayisaholiday-api
+EnvironmentFile=/home/jc/adayisaholidaycom/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -29,6 +29,8 @@ python3 scripts/fetch_checkiday.py
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): browser SQLite WASM for holiday cache/offline; VPS DuckDB + SQLite; Go gin systemd API on `127.0.0.1:8083` behind Caddy. No Postgres.
 
+Member accounts: [`docs/account.html`](docs/account.html) · API: [`api/`](api/)
+
 ## Status
 
-Live on the VPS at adayisaholiday.com (Caddy). Push to `main` deploys `docs/` via GitHub Actions.
+Live on the VPS at adayisaholiday.com (Caddy). Push to `main` deploys `docs/` and the gin API via GitHub Actions.
