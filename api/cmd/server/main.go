@@ -10,6 +10,7 @@ import (
 	"github.com/james-see/everydayisaholiday/api/internal/auth"
 	"github.com/james-see/everydayisaholiday/api/internal/config"
 	"github.com/james-see/everydayisaholiday/api/internal/db"
+	"github.com/james-see/everydayisaholiday/api/internal/digest"
 	"github.com/james-see/everydayisaholiday/api/internal/mail"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -24,6 +25,8 @@ import (
 // @cookie.name ah_session
 func main() {
 	loadDotEnv(".env")
+	// Also load VPS env path when running under systemd from /home/jc/adayisaholidaycom
+	loadDotEnv("/home/jc/adayisaholidaycom/.env")
 	cfg := config.Load()
 	if cfg.SessionSecret == "" {
 		log.Println("warning: SESSION_SECRET is empty; set it in production")
@@ -35,16 +38,25 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	h := &auth.Handler{
-		DB:     sqlDB,
-		Cfg:    cfg,
-		Mailer: mail.New(cfg.MailjetAPIKey, cfg.MailjetSecretKey, cfg.MailFrom),
-	}
+	mailer := mail.New(cfg.MailjetAPIKey, cfg.MailjetSecretKey, cfg.MailFrom)
 	if cfg.MailjetAPIKey != "" && cfg.MailjetSecretKey != "" {
 		log.Println("mail: mailjet enabled")
 	} else {
 		log.Println("mail: log-only (set MAILJET_API_KEY + MAILJET_SECRET_KEY)")
 	}
+
+	holidays, err := digest.Load(cfg.HolidaysPath)
+	if err != nil {
+		log.Fatalf("holidays: %v (set HOLIDAYS_PATH)", err)
+	}
+	log.Printf("holidays: loaded from %s (%d categories)", cfg.HolidaysPath, len(holidays.Categories()))
+
+	authH := &auth.Handler{DB: sqlDB, Cfg: cfg, Mailer: mailer}
+	runner := &digest.Runner{DB: sqlDB, Cfg: cfg, Mailer: mailer, Holidays: holidays}
+	digestH := &digest.Handler{
+		DB: sqlDB, Cfg: cfg, Auth: authH, Mailer: mailer, Holidays: holidays, Runner: runner,
+	}
+	runner.StartLoop()
 
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
@@ -59,15 +71,23 @@ func main() {
 
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/signup", h.Signup)
-		authGroup.POST("/login", h.Login)
-		authGroup.POST("/logout", h.Logout)
-		authGroup.GET("/me", h.Me)
-		authGroup.GET("/verify", h.Verify)
-		authGroup.POST("/resend-verification", h.ResendVerification)
-		authGroup.POST("/forgot", h.ForgotPassword)
-		authGroup.POST("/reset", h.ResetPassword)
+		authGroup.POST("/signup", authH.Signup)
+		authGroup.POST("/login", authH.Login)
+		authGroup.POST("/logout", authH.Logout)
+		authGroup.GET("/me", authH.Me)
+		authGroup.GET("/verify", authH.Verify)
+		authGroup.POST("/resend-verification", authH.ResendVerification)
+		authGroup.POST("/forgot", authH.ForgotPassword)
+		authGroup.POST("/reset", authH.ResetPassword)
+		authGroup.GET("/email-prefs", digestH.GetPrefs)
+		authGroup.PUT("/email-prefs", digestH.PutPrefs)
+		authGroup.GET("/email-prefs/categories", digestH.Categories)
+		authGroup.POST("/email-prefs/preview", digestH.Preview)
 	}
+
+	r.GET("/unsubscribe", digestH.Unsubscribe)
+	r.POST("/unsubscribe", digestH.Unsubscribe)
+	r.POST("/internal/digest/run", digestH.RunNow)
 
 	log.Printf("listening on %s", cfg.ListenAddr)
 	if err := r.Run(cfg.ListenAddr); err != nil {
@@ -82,8 +102,8 @@ func corsMiddleware() gin.HandlerFunc {
 		case "https://adayisaholiday.com", "http://127.0.0.1:8766", "http://localhost:8766", "http://127.0.0.1:8083":
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Credentials", "true")
-			c.Header("Access-Control-Allow-Headers", "Content-Type")
-			c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+			c.Header("Access-Control-Allow-Headers", "Content-Type, X-Digest-Token")
+			c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,OPTIONS")
 		}
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)

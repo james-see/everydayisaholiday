@@ -13,11 +13,18 @@ body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); co
 header { text-align: center; padding: 2.5rem 1rem 1.5rem; }
 header a { color: var(--accent); text-decoration: none; font-size: clamp(1.4rem, 5vw, 2rem); }
 header p { color: var(--muted); margin-top: 0.4rem; font-style: italic; }
-main { max-width: 420px; margin: 0 auto; padding: 0 1rem 3rem; }
+main { max-width: 520px; margin: 0 auto; padding: 0 1rem 3rem; }
 .panel { background: var(--card); border-radius: 8px; border-left: 4px solid var(--accent); padding: 1.5rem; margin-bottom: 1rem; }
 .panel h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--accent); }
 label { display: block; font-size: 0.9rem; color: var(--muted); margin: 0.75rem 0 0.3rem; }
-input { width: 100%; padding: 0.65rem 0.75rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); font-size: 16px; font-family: inherit; }
+input, select { width: 100%; padding: 0.65rem 0.75rem; border-radius: 6px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); font-size: 16px; font-family: inherit; }
+input[type="checkbox"] { width: auto; margin-right: 0.4rem; }
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.75rem; margin-top: 0.5rem; max-height: 180px; overflow-y: auto; }
+.cat-grid label { margin: 0; color: var(--fg); font-size: 0.8rem; }
+.row-check { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+.row-check label { margin: 0; color: var(--fg); }
+.hint { color: var(--muted); font-size: 0.8rem; margin-top: 0.4rem; }
+pre.preview { white-space: pre-wrap; font-size: 0.75rem; background: var(--bg); padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem; max-height: 200px; overflow: auto; color: var(--muted); }
 button, .btn { display: inline-block; margin-top: 1rem; padding: 0.65rem 1.1rem; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-family: inherit; font-size: 1rem; cursor: pointer; text-decoration: none; }
 button.secondary { background: transparent; border: 1px solid var(--muted); color: var(--fg); margin-left: 0.5rem; }
 .msg { margin-top: 0.75rem; font-size: 0.9rem; }
@@ -43,6 +50,36 @@ footer a { color: var(--accent); text-decoration: none; }
   <p class="user-line" id="user-email"></p>
   <button type="button" id="logout-btn">Log out</button>
   <a class="btn secondary" href="/">Back to calendar</a>
+</div>
+
+<div id="digest-panel" class="panel hidden">
+  <h2>Daily email digest</h2>
+  <p class="hint">Get today’s holidays around 8:00 in your timezone. Leave categories unchecked for all.</p>
+  <form id="digest-form">
+    <div class="row-check">
+      <input type="checkbox" id="digest-enabled">
+      <label for="digest-enabled">Send me the daily digest</label>
+    </div>
+    <label for="digest-tz">Timezone</label>
+    <input id="digest-tz" type="text" list="tz-list" placeholder="America/New_York" autocomplete="off">
+    <datalist id="tz-list">
+      <option value="UTC"></option>
+      <option value="America/New_York"></option>
+      <option value="America/Chicago"></option>
+      <option value="America/Denver"></option>
+      <option value="America/Los_Angeles"></option>
+      <option value="Europe/London"></option>
+      <option value="Europe/Paris"></option>
+      <option value="Asia/Tokyo"></option>
+      <option value="Australia/Sydney"></option>
+    </datalist>
+    <label>Categories (optional filter)</label>
+    <div class="cat-grid" id="cat-grid"></div>
+    <button type="submit">Save preferences</button>
+    <button type="button" class="secondary" id="preview-btn">Preview today</button>
+    <p class="msg" id="digest-msg"></p>
+    <pre class="preview hidden" id="digest-preview"></pre>
+  </form>
 </div>
 
 <div id="auth-panel" class="panel">
@@ -134,12 +171,69 @@ async function refreshSession() {
   const { res, data } = await api('/auth/me');
   const authed = res.ok;
   document.getElementById('session-panel').classList.toggle('hidden', !authed);
+  document.getElementById('digest-panel').classList.toggle('hidden', !authed);
   document.getElementById('auth-panel').classList.toggle('hidden', authed);
   if (authed) {
     document.getElementById('user-email').textContent = data.email;
+    await loadDigestPrefs();
   }
   return authed;
 }
+
+async function loadDigestPrefs() {
+  const catsRes = await api('/auth/email-prefs/categories');
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '';
+  const cats = (catsRes.data.categories || []);
+  for (const c of cats) {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = c;
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' ' + c));
+    grid.appendChild(lab);
+  }
+  const { res, data } = await api('/auth/email-prefs');
+  if (!res.ok) return;
+  document.getElementById('digest-enabled').checked = !!data.enabled;
+  document.getElementById('digest-tz').value = data.timezone || 'UTC';
+  const selected = new Set(data.categories || []);
+  grid.querySelectorAll('input[type=checkbox]').forEach((el) => {
+    el.checked = selected.has(el.value);
+  });
+}
+
+document.getElementById('digest-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const categories = [...document.querySelectorAll('#cat-grid input:checked')].map((el) => el.value);
+  const { res, data } = await api('/auth/email-prefs', {
+    method: 'PUT',
+    body: JSON.stringify({
+      enabled: document.getElementById('digest-enabled').checked,
+      timezone: document.getElementById('digest-tz').value.trim(),
+      categories,
+    }),
+  });
+  if (!res.ok) {
+    setMsg('digest-msg', data.error || 'Save failed', false);
+    return;
+  }
+  setMsg('digest-msg', 'Preferences saved.', true);
+});
+
+document.getElementById('preview-btn').addEventListener('click', async () => {
+  const { res, data } = await api('/auth/email-prefs/preview', { method: 'POST', body: '{}' });
+  const pre = document.getElementById('digest-preview');
+  if (!res.ok) {
+    setMsg('digest-msg', data.error || 'Preview failed', false);
+    pre.classList.add('hidden');
+    return;
+  }
+  setMsg('digest-msg', `Preview for ${data.local_date} (${data.count} holidays)`, true);
+  pre.textContent = data.text || '';
+  pre.classList.remove('hidden');
+});
 
 forms.login.addEventListener('submit', async (e) => {
   e.preventDefault();

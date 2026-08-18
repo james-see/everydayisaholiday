@@ -15,7 +15,7 @@ The site is a static calendar on a VPS (Caddy → `/home/jc/adayisaholidaycom/si
 | Browser holidays | Official **SQLite WASM** (`sqlite3.wasm`) + **OPFS**, IndexedDB/memory fallback | Holiday **cache + offline** only |
 | VPS holidays / API reads | Embedded **DuckDB** file | Authoritative holiday dataset; member API queries |
 | VPS accounts / billing | Embedded **SQLite** file | Users, sessions, prefs, API key hashes, Stripe entitlements |
-| API | **Go gin**, **systemd** unit `adayisaholiday-api.service` | Auth, email, Stripe, `/v1/*` |
+| API | **Go gin**, **systemd** unit `adayisaholiday-api.service` | Auth, daily digest, Stripe, `/v1/*` |
 | Edge | Existing **Caddy** for `adayisaholiday.com` | Static root + reverse proxy to gin |
 | Out of scope | **Postgres**, browser-stored credentials/secrets | — |
 
@@ -24,6 +24,7 @@ The site is a static calendar on a VPS (Caddy → `/home/jc/adayisaholidaycom/si
 - **Client:** official SQLite Wasm build (assets under `docs/wasm/`); prefer OPFS via `installOpfsSAHPoolVfs` when available; fall back to in-memory SQLite, then plain JSON if WASM fails. OPFS requires cross-origin isolation — Caddy must send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` on the site.
 - **Server:** Go DuckDB driver + SQLite driver; **no ORM** — prepared statements with explicit column lists.
 - **Auth transport:** HTTP-only session cookies (CSRF as needed); API keys via `Authorization: Bearer` (hashes only in SQLite).
+- **Email:** Mailjet (`MAILJET_API_KEY` + `MAILJET_SECRET_KEY`); daily digest job runs in-process every `DIGEST_INTERVAL` for subscribers whose local hour equals `DIGEST_HOUR`.
 
 ### Sync model
 

@@ -12,14 +12,27 @@ import (
 	"time"
 )
 
+type Message struct {
+	To      string
+	Subject string
+	Text    string
+	HTML    string
+	Headers map[string]string
+}
+
 type Sender interface {
 	Send(to, subject, text string) error
+	SendMessage(msg Message) error
 }
 
 type LogSender struct{}
 
 func (LogSender) Send(to, subject, text string) error {
-	log.Printf("mail[log] to=%s subject=%q body=%q", to, subject, text)
+	return LogSender{}.SendMessage(Message{To: to, Subject: subject, Text: text})
+}
+
+func (LogSender) SendMessage(msg Message) error {
+	log.Printf("mail[log] to=%s subject=%q headers=%v body=%q", msg.To, msg.Subject, msg.Headers, msg.Text)
 	return nil
 }
 
@@ -36,11 +49,12 @@ type mailjetPayload struct {
 }
 
 type mailjetMessage struct {
-	From       mailjetAddress   `json:"From"`
-	To         []mailjetAddress `json:"To"`
-	Subject    string           `json:"Subject"`
-	TextPart   string           `json:"TextPart"`
-	HTMLPart   string           `json:"HTMLPart,omitempty"`
+	From     mailjetAddress   `json:"From"`
+	To       []mailjetAddress `json:"To"`
+	Subject  string           `json:"Subject"`
+	TextPart string           `json:"TextPart"`
+	HTMLPart string           `json:"HTMLPart,omitempty"`
+	Headers  map[string]string `json:"Headers,omitempty"`
 }
 
 type mailjetAddress struct {
@@ -49,6 +63,10 @@ type mailjetAddress struct {
 }
 
 func (m MailjetSender) Send(to, subject, text string) error {
+	return m.SendMessage(Message{To: to, Subject: subject, Text: text})
+}
+
+func (m MailjetSender) SendMessage(msg Message) error {
 	client := m.Client
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
@@ -57,14 +75,15 @@ func (m MailjetSender) Send(to, subject, text string) error {
 	if fromEmail == "" {
 		return fmt.Errorf("mailjet: invalid MAIL_FROM")
 	}
-	body, err := json.Marshal(mailjetPayload{
-		Messages: []mailjetMessage{{
-			From:     mailjetAddress{Email: fromEmail, Name: fromName},
-			To:       []mailjetAddress{{Email: to}},
-			Subject:  subject,
-			TextPart: text,
-		}},
-	})
+	mj := mailjetMessage{
+		From:     mailjetAddress{Email: fromEmail, Name: fromName},
+		To:       []mailjetAddress{{Email: msg.To}},
+		Subject:  msg.Subject,
+		TextPart: msg.Text,
+		HTMLPart: msg.HTML,
+		Headers:  msg.Headers,
+	}
+	body, err := json.Marshal(mailjetPayload{Messages: []mailjetMessage{mj}})
 	if err != nil {
 		return err
 	}
@@ -93,7 +112,6 @@ func splitFrom(from string) (email, name string) {
 	}
 	addr, err := mail.ParseAddress(from)
 	if err != nil {
-		// bare email
 		if strings.Contains(from, "@") && !strings.ContainsAny(from, "<>") {
 			return from, ""
 		}

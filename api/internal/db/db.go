@@ -52,6 +52,20 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+CREATE TABLE IF NOT EXISTS email_prefs (
+  user_id INTEGER PRIMARY KEY,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  timezone TEXT NOT NULL DEFAULT 'UTC',
+  categories TEXT NOT NULL DEFAULT '[]',
+  unsub_token TEXT NOT NULL UNIQUE,
+  last_sent_local_date TEXT,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_prefs_enabled ON email_prefs(enabled);
+CREATE INDEX IF NOT EXISTS idx_email_prefs_unsub_token ON email_prefs(unsub_token);
 `)
 	return err
 }

@@ -529,6 +529,25 @@ WHERE s.token_hash = ? AND s.expires_at > ?`,
 	return u, true
 }
 
+// CurrentUser returns the authenticated user for the request, if any.
+func (h *Handler) CurrentUser(c *gin.Context) (id int64, email string, ok bool) {
+	u, ok := h.userFromCookie(c)
+	if !ok {
+		return 0, "", false
+	}
+	return u.ID, u.Email, true
+}
+
+// NewToken returns a raw URL-safe token and its SHA-256 hex hash.
+func NewToken() (raw string, hash string, err error) {
+	return newToken()
+}
+
+// HashToken hashes a raw token the same way sessions/unsubscribe tokens are stored.
+func HashToken(raw string) string {
+	return hashToken(raw)
+}
+
 func normalizeEmail(email string) (string, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" || utf8.RuneCountInString(email) > maxEmailLen {

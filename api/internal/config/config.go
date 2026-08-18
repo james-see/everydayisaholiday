@@ -21,6 +21,10 @@ type Config struct {
 	MailjetAPIKey      string
 	MailjetSecretKey   string
 	MailFrom           string
+	HolidaysPath       string
+	DigestHour         int
+	DigestInterval     time.Duration
+	DigestAdminToken   string
 }
 
 func Load() Config {
@@ -38,6 +42,10 @@ func Load() Config {
 		MailjetAPIKey:      getenv("MAILJET_API_KEY", ""),
 		MailjetSecretKey:   getenv("MAILJET_SECRET_KEY", ""),
 		MailFrom:           getenv("MAIL_FROM", "A Day Is a Holiday <noreply@adayisaholiday.com>"),
+		HolidaysPath:       getenv("HOLIDAYS_PATH", "/home/jc/adayisaholidaycom/site/holidays.json"),
+		DigestHour:         getenvInt("DIGEST_HOUR", 8),
+		DigestInterval:     getenvDuration("DIGEST_INTERVAL", 5*time.Minute),
+		DigestAdminToken:   getenv("DIGEST_ADMIN_TOKEN", ""),
 	}
 }
 
@@ -70,4 +78,16 @@ func getenvDuration(k string, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+func getenvInt(k string, def int) int {
+	v := os.Getenv(k)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return n
 }
