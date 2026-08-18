@@ -38,7 +38,12 @@ func main() {
 	h := &auth.Handler{
 		DB:     sqlDB,
 		Cfg:    cfg,
-		Mailer: mail.New(cfg.ResendAPIKey, cfg.MailFrom),
+		Mailer: mail.New(cfg.MailjetAPIKey, cfg.MailjetSecretKey, cfg.MailFrom),
+	}
+	if cfg.MailjetAPIKey != "" && cfg.MailjetSecretKey != "" {
+		log.Println("mail: mailjet enabled")
+	} else {
+		log.Println("mail: log-only (set MAILJET_API_KEY + MAILJET_SECRET_KEY)")
 	}
 
 	if os.Getenv("GIN_MODE") == "" {
@@ -59,6 +64,7 @@ func main() {
 		authGroup.POST("/logout", h.Logout)
 		authGroup.GET("/me", h.Me)
 		authGroup.GET("/verify", h.Verify)
+		authGroup.POST("/resend-verification", h.ResendVerification)
 		authGroup.POST("/forgot", h.ForgotPassword)
 		authGroup.POST("/reset", h.ResetPassword)
 	}

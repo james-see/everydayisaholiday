@@ -126,8 +126,11 @@ INSERT INTO users (
 	uid, _ := res.LastInsertId()
 
 	verifyURL := fmt.Sprintf("%s/auth/verify?token=%s", h.Cfg.PublicBaseURL, rawToken)
-	_ = h.Mailer.Send(email, "Verify your A Day Is a Holiday account",
-		"Thanks for signing up.\n\nVerify your email:\n"+verifyURL+"\n\nThis link expires in "+h.Cfg.VerifyTTL.String()+".\n")
+	if err := h.Mailer.Send(email, "Verify your A Day Is a Holiday account",
+		"Thanks for signing up.\n\nVerify your email:\n"+verifyURL+"\n\nThis link expires in "+h.Cfg.VerifyTTL.String()+".\n"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "account created but verification email failed to send"})
+		return
+	}
 
 	out := gin.H{
 		"id":      uid,
@@ -139,6 +142,64 @@ INSERT INTO users (
 		out["verify_url"] = verifyURL
 	}
 	c.JSON(http.StatusCreated, out)
+}
+
+// ResendVerification godoc
+// @Summary Resend email verification link
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body forgotReq true "email"
+// @Success 200 {object} map[string]string
+// @Router /auth/resend-verification [post]
+func (h *Handler) ResendVerification(c *gin.Context) {
+	var req forgotReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	email, err := normalizeEmail(req.Email)
+	out := gin.H{"message": "if that account needs verification, a new link was sent"}
+	if err != nil {
+		c.JSON(http.StatusOK, out)
+		return
+	}
+	var (
+		id         int64
+		verifiedAt sql.NullString
+	)
+	err = h.DB.QueryRow(`
+SELECT id, email_verified_at FROM users WHERE email = ?`, email).Scan(&id, &verifiedAt)
+	if err != nil {
+		c.JSON(http.StatusOK, out)
+		return
+	}
+	if verifiedAt.Valid && verifiedAt.String != "" {
+		c.JSON(http.StatusOK, gin.H{"message": "email already verified"})
+		return
+	}
+	rawToken, tokenHash, err := newToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resend"})
+		return
+	}
+	now := time.Now().UTC()
+	expires := now.Add(h.Cfg.VerifyTTL).Format(time.RFC3339)
+	_, err = h.DB.Exec(`
+UPDATE users
+SET verify_token_hash = ?, verify_token_expires_at = ?, updated_at = ?
+WHERE id = ?`, tokenHash, expires, now.Format(time.RFC3339), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not resend"})
+		return
+	}
+	verifyURL := fmt.Sprintf("%s/auth/verify?token=%s", h.Cfg.PublicBaseURL, rawToken)
+	if err := h.Mailer.Send(email, "Verify your A Day Is a Holiday account",
+		"Verify your email:\n"+verifyURL+"\n\nThis link expires in "+h.Cfg.VerifyTTL.String()+".\n"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not send verification email"})
+		return
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // Login godoc

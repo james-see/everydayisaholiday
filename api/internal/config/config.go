@@ -17,25 +17,27 @@ type Config struct {
 	SessionTTL       time.Duration
 	VerifyTTL        time.Duration
 	ResetTTL         time.Duration
-	ExposeVerifyToken bool
-	ResendAPIKey     string
-	MailFrom         string
+	ExposeVerifyToken  bool
+	MailjetAPIKey      string
+	MailjetSecretKey   string
+	MailFrom           string
 }
 
 func Load() Config {
 	return Config{
-		ListenAddr:        getenv("LISTEN_ADDR", "127.0.0.1:8083"),
-		DatabasePath:      getenv("DATABASE_PATH", "./data/accounts.db"),
-		SessionSecret:     getenv("SESSION_SECRET", ""),
-		CookieSecure:      getenvBool("COOKIE_SECURE", true),
-		CookieDomain:      getenv("COOKIE_DOMAIN", ""),
-		PublicBaseURL:     strings.TrimRight(getenv("PUBLIC_BASE_URL", "https://adayisaholiday.com"), "/"),
-		SessionTTL:        getenvDuration("SESSION_TTL", 30*24*time.Hour),
-		VerifyTTL:         getenvDuration("VERIFY_TTL", 48*time.Hour),
-		ResetTTL:          getenvDuration("RESET_TTL", 2*time.Hour),
-		ExposeVerifyToken: getenvBool("EXPOSE_VERIFY_TOKEN", false),
-		ResendAPIKey:      getenv("RESEND_API_KEY", ""),
-		MailFrom:          getenv("MAIL_FROM", "A Day Is a Holiday <noreply@adayisaholiday.com>"),
+		ListenAddr:         getenv("LISTEN_ADDR", "127.0.0.1:8083"),
+		DatabasePath:       getenv("DATABASE_PATH", "./data/accounts.db"),
+		SessionSecret:      getenv("SESSION_SECRET", ""),
+		CookieSecure:       getenvBool("COOKIE_SECURE", true),
+		CookieDomain:       getenv("COOKIE_DOMAIN", ""),
+		PublicBaseURL:      strings.TrimRight(getenv("PUBLIC_BASE_URL", "https://adayisaholiday.com"), "/"),
+		SessionTTL:         getenvDuration("SESSION_TTL", 30*24*time.Hour),
+		VerifyTTL:          getenvDuration("VERIFY_TTL", 48*time.Hour),
+		ResetTTL:           getenvDuration("RESET_TTL", 2*time.Hour),
+		ExposeVerifyToken:  getenvBool("EXPOSE_VERIFY_TOKEN", false),
+		MailjetAPIKey:      getenv("MAILJET_API_KEY", ""),
+		MailjetSecretKey:   getenv("MAILJET_SECRET_KEY", ""),
+		MailFrom:           getenv("MAIL_FROM", "A Day Is a Holiday <noreply@adayisaholiday.com>"),
 	}
 }
 
