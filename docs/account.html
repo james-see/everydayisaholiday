@@ -82,6 +82,17 @@ footer a { color: var(--accent); text-decoration: none; }
   </form>
 </div>
 
+<div id="keys-panel" class="panel hidden">
+  <h2>API keys &amp; MCP</h2>
+  <p class="hint">Use a Bearer API key for REST <code>/v1/*</code>, or connect MCP at <code>https://adayisaholiday.com/mcp</code> (OAuth — sign in when prompted). Keys are shown once on create.</p>
+  <label for="key-name">Key name</label>
+  <input id="key-name" type="text" placeholder="cursor" maxlength="64">
+  <button type="button" id="create-key-btn">Create API key</button>
+  <p class="msg" id="keys-msg"></p>
+  <pre class="preview hidden" id="new-key-preview"></pre>
+  <div id="keys-list" style="margin-top:1rem"></div>
+</div>
+
 <div id="auth-panel" class="panel">
   <div class="tabs">
     <button type="button" class="active" data-tab="login">Log in</button>
@@ -172,13 +183,64 @@ async function refreshSession() {
   const authed = res.ok;
   document.getElementById('session-panel').classList.toggle('hidden', !authed);
   document.getElementById('digest-panel').classList.toggle('hidden', !authed);
+  document.getElementById('keys-panel').classList.toggle('hidden', !authed);
   document.getElementById('auth-panel').classList.toggle('hidden', authed);
   if (authed) {
     document.getElementById('user-email').textContent = data.email;
     await loadDigestPrefs();
+    await loadKeys();
+    const next = params.get('next');
+    if (next && next.startsWith('/oauth/')) {
+      location.href = next;
+      return true;
+    }
   }
   return authed;
 }
+
+async function loadKeys() {
+  const { res, data } = await api('/auth/api-keys');
+  const el = document.getElementById('keys-list');
+  el.innerHTML = '';
+  if (!res.ok) return;
+  for (const k of (data.keys || [])) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.85rem';
+    const meta = document.createElement('span');
+    meta.textContent = `${k.name} · ${k.prefix}… · ${k.rate_tier}` + (k.revoked_at ? ' (revoked)' : '');
+    row.appendChild(meta);
+    if (!k.revoked_at) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary';
+      btn.style.marginTop = '0';
+      btn.textContent = 'Revoke';
+      btn.onclick = async () => {
+        await api('/auth/api-keys/' + k.id + '/revoke', { method: 'POST', body: '{}' });
+        await loadKeys();
+      };
+      row.appendChild(btn);
+    }
+    el.appendChild(row);
+  }
+}
+
+document.getElementById('create-key-btn').addEventListener('click', async () => {
+  const { res, data } = await api('/auth/api-keys', {
+    method: 'POST',
+    body: JSON.stringify({ name: document.getElementById('key-name').value || 'default' }),
+  });
+  const pre = document.getElementById('new-key-preview');
+  if (!res.ok) {
+    setMsg('keys-msg', data.error || 'Create failed', false);
+    pre.classList.add('hidden');
+    return;
+  }
+  setMsg('keys-msg', 'Copy this key now — it will not be shown again.', true);
+  pre.textContent = data.key;
+  pre.classList.remove('hidden');
+  await loadKeys();
+});
 
 async function loadDigestPrefs() {
   const catsRes = await api('/auth/email-prefs/categories');

@@ -98,6 +98,60 @@ func (s *Store) ForDate(month, day int, categories []string) []Holiday {
 	return out
 }
 
+// Search returns holidays matching q in name/country, optional category and date (MM-DD).
+func (s *Store) Search(q, category, date string, limit int) []Holiday {
+	if limit <= 0 {
+		limit = 50
+	}
+	q = strings.ToLower(strings.TrimSpace(q))
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]Holiday, 0, limit)
+	appendMatch := func(list []Holiday) {
+		for _, h := range list {
+			if len(out) >= limit {
+				return
+			}
+			if category != "" && h.Category != category {
+				continue
+			}
+			if q != "" {
+				hay := strings.ToLower(h.Name + " " + h.Country)
+				if !strings.Contains(hay, q) {
+					continue
+				}
+			}
+			out = append(out, h)
+		}
+	}
+	if date != "" {
+		appendMatch(s.byMD[date])
+		return out
+	}
+	keys := make([]string, 0, len(s.byMD))
+	for k := range s.byMD {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		appendMatch(s.byMD[k])
+		if len(out) >= limit {
+			break
+		}
+	}
+	return out
+}
+
+func (s *Store) Count() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	n := 0
+	for _, list := range s.byMD {
+		n += len(list)
+	}
+	return n
+}
+
 func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subject, text, html string) {
 	label := localDate.Format("Monday, January 2")
 	subject = "Today's holidays — " + label

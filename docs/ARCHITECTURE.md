@@ -95,6 +95,7 @@ Exact path prefixes may grow (`/webhooks/stripe`, etc.) but always reverse-proxi
 | `sessions` | Server sessions |
 | `email_prefs` | Digest on/off, IANA timezone, category filters |
 | `api_keys` | Key id, hash, label, created/revoked, rate-tier hints |
+| `oauth_clients` / `oauth_auth_codes` / `oauth_access_tokens` | OAuth 2.1 AS for MCP (PKCE + DCR) |
 | `subscriptions` | Stripe customer/subscription ids, plan, status, period end |
 
 ## Consequences
