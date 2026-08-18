@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -100,7 +101,7 @@ func (h *Handler) Checkout(c *gin.Context) {
 	bg := "#1a1a2e"
 	btn := "#e94560"
 	name := "A Day Is a Holiday"
-	font := "Lora"
+	font := "lora"
 	border := "rounded"
 	params := &stripe.CheckoutSessionCreateParams{
 		Mode:              stripe.String(string(stripe.CheckoutSessionModeSubscription)),
@@ -143,7 +144,7 @@ func (h *Handler) Checkout(c *gin.Context) {
 	sess, err := h.Stripe.V1CheckoutSessions.Create(c.Request.Context(), params)
 	if err != nil {
 		log.Printf("billing: checkout: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start checkout"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start checkout", "detail": stripeMessage(err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"url": sess.URL})
@@ -178,7 +179,7 @@ func (h *Handler) Portal(c *gin.Context) {
 	})
 	if err != nil {
 		log.Printf("billing: portal: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open portal"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open portal", "detail": stripeMessage(err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"url": sess.URL})
@@ -419,6 +420,15 @@ FROM users WHERE id = ?`, uid).Scan(&plan, &status, &periodEnd, &customer, &subI
 		out["stripe_subscription_id"] = subID.String
 	}
 	return out, nil
+}
+
+// stripeMessage returns the customer-safe Stripe error message, if any.
+func stripeMessage(err error) string {
+	var serr *stripe.Error
+	if errors.As(err, &serr) && serr.Msg != "" {
+		return serr.Msg
+	}
+	return ""
 }
 
 func customerID(c *stripe.Customer) string {

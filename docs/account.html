@@ -236,7 +236,7 @@ async function startCheckout(interval) {
     body: JSON.stringify({ interval }),
   });
   if (!res.ok || !data.url) {
-    setMsg('billing-msg', data.error || 'Checkout failed', false);
+    setMsg('billing-msg', [data.error || 'Checkout failed', data.detail].filter(Boolean).join(' — '), false);
     return;
   }
   location.href = data.url;
@@ -248,7 +248,7 @@ document.getElementById('portal-btn').addEventListener('click', async () => {
   setMsg('billing-msg', 'Opening billing portal…', true);
   const { res, data } = await api('/billing/portal', { method: 'POST', body: '{}' });
   if (!res.ok || !data.url) {
-    setMsg('billing-msg', data.error || 'Portal failed', false);
+    setMsg('billing-msg', [data.error || 'Portal failed', data.detail].filter(Boolean).join(' — '), false);
     return;
   }
   location.href = data.url;
