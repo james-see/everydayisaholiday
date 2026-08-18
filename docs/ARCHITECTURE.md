@@ -21,7 +21,7 @@ The site is a static calendar on a VPS (Caddy → `/home/jc/adayisaholidaycom/si
 
 ### Libraries
 
-- **Client:** official SQLite Wasm build (assets under `docs/wasm/`); prefer OPFS persistence; fall back if OPFS unavailable.
+- **Client:** official SQLite Wasm build (assets under `docs/wasm/`); prefer OPFS via `installOpfsSAHPoolVfs` when available; fall back to in-memory SQLite, then plain JSON if WASM fails. OPFS requires cross-origin isolation — Caddy must send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` on the site.
 - **Server:** Go DuckDB driver + SQLite driver; **no ORM** — prepared statements with explicit column lists.
 - **Auth transport:** HTTP-only session cookies (CSRF as needed); API keys via `Authorization: Bearer` (hashes only in SQLite).
 
@@ -49,6 +49,9 @@ The site is a static calendar on a VPS (Caddy → `/home/jc/adayisaholidaycom/si
 adayisaholiday.com {
 	root * /home/jc/adayisaholidaycom/site/
 	encode gzip
+	# Required for SQLite WASM OPFS persistence (cache/offline)
+	header Cross-Origin-Opener-Policy same-origin
+	header Cross-Origin-Embedder-Policy require-corp
 
 	handle /v1/* {
 		reverse_proxy 127.0.0.1:8083

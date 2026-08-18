@@ -193,10 +193,12 @@ footer a { color: var(--accent); text-decoration: none; }
 <p>4,076 holidays across 366 days. Curated from Christian, Jewish, Islamic, Hindu, Buddhist, Sikh, Jain, Zoroastrian, Bahá'í, Shinto, ancient Roman/Greek/Egyptian, Celtic/Wiccan, UN, national, and secular National Day traditions.</p>
 <p><a href="https://github.com/james-see/everydayisaholiday">GitHub</a> · Built by <a href="https://github.com/james-see">@james-see</a></p>
 </footer>
-<script>
-let HOLIDAYS = [];
+<script type="module">
+import { initHolidaysDb } from './js/holidays-db.js';
+
 const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
+/** @type {Awaited<ReturnType<typeof initHolidaysDb>> | null} */
+let db = null;
 
 const monthFilter = document.getElementById('month-filter');
 months.forEach((m, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = m; monthFilter.appendChild(opt); });
@@ -212,31 +214,38 @@ function countrySuffix(h) {
 function holidayLine(h) {
   return `${catTag(h.category)} ${esc(h.name)}${countrySuffix(h)}`;
 }
-function holidayMatches(h, search) {
-  const q = search.toLowerCase();
-  return h.name.toLowerCase().includes(q) || (h.country && h.country.toLowerCase().includes(q));
+
+function mmdd(month0, day) {
+  return `${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function getHolidaysForDate(month, day) {
-  const key = `${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  return HOLIDAYS.filter(h => h.date === key);
+function groupByDate(rows) {
+  const map = new Map();
+  for (const h of rows) {
+    if (!map.has(h.date)) map.set(h.date, []);
+    map.get(h.date).push(h);
+  }
+  return map;
 }
 
-// Check for ?q= search param
 const urlParams = new URLSearchParams(window.location.search);
 const initialSearch = urlParams.get('q') || '';
 
-fetch('holidays.json').then(r => r.json()).then(data => {
-  HOLIDAYS = data;
+try {
+  db = await initHolidaysDb();
 
-  const cats = [...new Set(data.map(h => h.category))].sort();
   const catFilter = document.getElementById('cat-filter');
-  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; catFilter.appendChild(opt); });
+  db.categories().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    catFilter.appendChild(opt);
+  });
 
   const now = new Date();
   const todayMonth = now.getMonth();
   const todayDay = now.getDate();
-  const todayHolidays = getHolidaysForDate(todayMonth, todayDay);
+  const todayHolidays = db.getByDate(mmdd(todayMonth, todayDay));
   document.getElementById('today-date').textContent = `${months[todayMonth]} ${todayDay}`;
   const th = document.getElementById('today-holidays');
   if (todayHolidays.length) {
@@ -247,42 +256,52 @@ fetch('holidays.json').then(r => r.json()).then(data => {
 
   if (initialSearch) document.getElementById('search').value = initialSearch;
   renderList();
-});
+} catch (e) {
+  console.error(e);
+  document.getElementById('today-date').textContent = 'Unable to load holidays';
+  document.getElementById('today-holidays').innerHTML =
+    '<div class="holiday">Check your connection and try again.</div>';
+}
 
 function renderList() {
-  const search = document.getElementById('search').value.toLowerCase();
+  if (!db) return;
+  const search = document.getElementById('search').value;
   const monthFilterVal = document.getElementById('month-filter').value;
   const catFilterVal = document.getElementById('cat-filter').value;
   const list = document.getElementById('calendar-list');
   list.innerHTML = '';
-  for (let m = 0; m < 12; m++) {
-    if (monthFilterVal !== '' && parseInt(monthFilterVal) !== m) continue;
-    for (let d = 1; d <= daysInMonth[m]; d++) {
-      const dayHolidays = getHolidaysForDate(m, d);
-      if (!dayHolidays.length) continue;
-      let filtered = dayHolidays;
-      if (catFilterVal) filtered = filtered.filter(h => h.category === catFilterVal);
-      if (search) filtered = filtered.filter(h => holidayMatches(h, search));
-      if (!filtered.length) continue;
-      const div = document.createElement('div');
-      div.className = 'day-entry';
-      const preview = filtered.slice(0, 2).map(holidayLine).join('<br>');
-      div.innerHTML = `<div class="date-label">${months[m]} ${d}</div><div class="preview">${preview}</div>`;
-      div.onclick = () => {
-        const all = dayHolidays.map(holidayLine).join('<br>');
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem';
-        const box = document.createElement('div');
-        box.style.cssText = 'background:var(--card);border-radius:12px;padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;border-left:4px solid var(--accent)';
-        box.innerHTML = `<div class="date-label" style="font-size:1.2rem;margin-bottom:1rem">${months[m]} ${d} — ${dayHolidays.length} holidays</div><div style="line-height:2">${all}</div>`;
-        modal.appendChild(box);
-        modal.onclick = () => modal.remove();
-        document.body.appendChild(modal);
-      };
-      list.appendChild(div);
-    }
+
+  const rows = db.queryDays({
+    search,
+    month: monthFilterVal === '' ? null : parseInt(monthFilterVal, 10),
+    category: catFilterVal,
+  });
+  const byDate = groupByDate(rows);
+
+  for (const [date, filtered] of byDate) {
+    const [mm, dd] = date.split('-').map(Number);
+    const m = mm - 1;
+    const d = dd;
+    const dayHolidays = db.getByDate(date);
+    const div = document.createElement('div');
+    div.className = 'day-entry';
+    const preview = filtered.slice(0, 2).map(holidayLine).join('<br>');
+    div.innerHTML = `<div class="date-label">${months[m]} ${d}</div><div class="preview">${preview}</div>`;
+    div.onclick = () => {
+      const all = dayHolidays.map(holidayLine).join('<br>');
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:var(--card);border-radius:12px;padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;border-left:4px solid var(--accent)';
+      box.innerHTML = `<div class="date-label" style="font-size:1.2rem;margin-bottom:1rem">${months[m]} ${d} — ${dayHolidays.length} holidays</div><div style="line-height:2">${all}</div>`;
+      modal.appendChild(box);
+      modal.onclick = () => modal.remove();
+      document.body.appendChild(modal);
+    };
+    list.appendChild(div);
   }
 }
+
 document.getElementById('search').addEventListener('input', renderList);
 document.getElementById('month-filter').addEventListener('change', renderList);
 document.getElementById('cat-filter').addEventListener('change', renderList);

@@ -25,5 +25,5 @@ jobs:
           printf '%s\n' \
             '138.197.180.211 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO8jjyKxvb2VBZ8Q6HZ8FUwD95V96ev6zRqBxhf2V2ZH' \
             > ~/.ssh/known_hosts
-          rsync -avz --delete --exclude CNAME --exclude wasm \
+          rsync -avz --delete --exclude CNAME \
             docs/ jc@138.197.180.211:/home/jc/adayisaholidaycom/site/
