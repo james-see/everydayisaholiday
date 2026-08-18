@@ -125,6 +125,54 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (bucket_key, window_start)
 );
+
+CREATE TABLE IF NOT EXISTS stripe_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  processed_at TEXT NOT NULL
+);
 `)
-	return err
+	if err != nil {
+		return err
+	}
+	return ensureUserBillingColumns(db)
+}
+
+func ensureUserBillingColumns(db *sql.DB) error {
+	have := map[string]bool{}
+	rows, err := db.Query(`PRAGMA table_info(users)`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return err
+		}
+		have[name] = true
+	}
+	alters := []struct {
+		col string
+		ddl string
+	}{
+		{"stripe_customer_id", `ALTER TABLE users ADD COLUMN stripe_customer_id TEXT`},
+		{"plan", `ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'`},
+		{"subscription_status", `ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT ''`},
+		{"stripe_subscription_id", `ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT`},
+		{"current_period_end", `ALTER TABLE users ADD COLUMN current_period_end TEXT`},
+	}
+	for _, a := range alters {
+		if have[a.col] {
+			continue
+		}
+		if _, err := db.Exec(a.ddl); err != nil {
+			return fmt.Errorf("add column %s: %w", a.col, err)
+		}
+	}
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id)`)
+	return nil
 }

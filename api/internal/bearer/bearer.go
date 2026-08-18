@@ -127,12 +127,18 @@ WHERE t.token_hash = ?`, Hash(raw)).Scan(&userID, &email, &clientID, &scope, &ex
 	if len(scopes) == 0 {
 		scopes = []string{"holidays:read"}
 	}
+	tier := "free"
+	var plan string
+	_ = v.DB.QueryRow(`SELECT plan FROM users WHERE id = ?`, userID).Scan(&plan)
+	if plan == "member" {
+		tier = "paid"
+	}
 	return &Principal{
 		UserID:   userID,
 		Email:    email,
 		AuthVia:  "oauth",
 		ClientID: clientID,
-		Tier:     "free",
+		Tier:     tier,
 		Scopes:   scopes,
 	}, nil
 }

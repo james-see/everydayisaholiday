@@ -25,6 +25,10 @@ type Config struct {
 	DigestHour         int
 	DigestInterval     time.Duration
 	DigestAdminToken   string
+	StripeSecretKey    string
+	StripeWebhookSecret string
+	StripePriceMonthly string
+	StripePriceYearly  string
 }
 
 func Load() Config {
@@ -45,7 +49,11 @@ func Load() Config {
 		HolidaysPath:       getenv("HOLIDAYS_PATH", "/home/jc/adayisaholidaycom/site/holidays.json"),
 		DigestHour:         getenvInt("DIGEST_HOUR", 8),
 		DigestInterval:     getenvDuration("DIGEST_INTERVAL", 5*time.Minute),
-		DigestAdminToken:   getenv("DIGEST_ADMIN_TOKEN", ""),
+		DigestAdminToken:    getenv("DIGEST_ADMIN_TOKEN", ""),
+		StripeSecretKey:     getenv("STRIPE_SECRET_KEY", ""),
+		StripeWebhookSecret: getenv("STRIPE_WEBHOOK_SECRET", ""),
+		StripePriceMonthly:  getenv("STRIPE_PRICE_MONTHLY", ""),
+		StripePriceYearly:   getenv("STRIPE_PRICE_YEARLY", ""),
 	}
 }
 

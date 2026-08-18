@@ -98,16 +98,22 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
+	tier := "free"
+	var plan string
+	_ = h.DB.QueryRow(`SELECT plan FROM users WHERE id = ?`, uid).Scan(&plan)
+	if plan == "member" {
+		tier = "paid"
+	}
 	res, err := h.DB.Exec(`
 INSERT INTO api_keys (user_id, name, prefix, key_hash, rate_tier, created_at, revoked_at, last_used_at)
-VALUES (?, ?, ?, ?, 'free', ?, NULL, NULL)`, uid, name, prefix, bearer.Hash(raw), now)
+VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)`, uid, name, prefix, bearer.Hash(raw), tier, now)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create key"})
 		return
 	}
 	id, _ := res.LastInsertId()
 	c.JSON(http.StatusCreated, keyDTO{
-		ID: id, Name: name, Prefix: prefix, RateTier: "free", CreatedAt: now, Key: raw,
+		ID: id, Name: name, Prefix: prefix, RateTier: tier, CreatedAt: now, Key: raw,
 	})
 }
 

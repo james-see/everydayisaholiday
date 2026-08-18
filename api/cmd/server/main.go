@@ -10,6 +10,7 @@ import (
 	"github.com/james-see/everydayisaholiday/api/internal/apikey"
 	"github.com/james-see/everydayisaholiday/api/internal/auth"
 	"github.com/james-see/everydayisaholiday/api/internal/bearer"
+	"github.com/james-see/everydayisaholiday/api/internal/billing"
 	"github.com/james-see/everydayisaholiday/api/internal/config"
 	"github.com/james-see/everydayisaholiday/api/internal/db"
 	"github.com/james-see/everydayisaholiday/api/internal/digest"
@@ -19,6 +20,7 @@ import (
 	"github.com/james-see/everydayisaholiday/api/internal/v1api"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/stripe/stripe-go/v86"
 
 	_ "github.com/james-see/everydayisaholiday/api/docs"
 )
@@ -70,6 +72,15 @@ func main() {
 	v1H := &v1api.Handler{Holidays: holidays, Validator: validator}
 	mcpSrv := mcpserver.New(holidays, validator, cfg.PublicBaseURL)
 
+	var stripeClient *stripe.Client
+	if cfg.StripeSecretKey != "" {
+		stripeClient = stripe.NewClient(cfg.StripeSecretKey)
+		log.Println("billing: stripe enabled")
+	} else {
+		log.Println("billing: stripe disabled (set STRIPE_SECRET_KEY)")
+	}
+	billingH := &billing.Handler{DB: sqlDB, Cfg: cfg, Auth: authH, Stripe: stripeClient}
+
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -120,6 +131,14 @@ func main() {
 
 	r.Any("/mcp", gin.WrapH(mcpSrv.Handler()))
 	r.Any("/mcp/*path", gin.WrapH(mcpSrv.Handler()))
+
+	billingGroup := r.Group("/billing")
+	{
+		billingGroup.GET("/status", billingH.Status)
+		billingGroup.POST("/checkout", billingH.Checkout)
+		billingGroup.POST("/portal", billingH.Portal)
+		billingGroup.POST("/webhook", billingH.Webhook)
+	}
 
 	log.Printf("listening on %s (mcp %s/mcp)", cfg.ListenAddr, strings.TrimRight(cfg.PublicBaseURL, "/"))
 	if err := r.Run(cfg.ListenAddr); err != nil {

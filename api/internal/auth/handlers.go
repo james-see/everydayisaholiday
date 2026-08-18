@@ -60,10 +60,13 @@ type resetReq struct {
 }
 
 type userDTO struct {
-	ID              int64  `json:"id"`
-	Email           string `json:"email"`
-	EmailVerifiedAt *string `json:"email_verified_at"`
-	CreatedAt       string `json:"created_at"`
+	ID                 int64   `json:"id"`
+	Email              string  `json:"email"`
+	EmailVerifiedAt    *string `json:"email_verified_at"`
+	CreatedAt          string  `json:"created_at"`
+	Plan               string  `json:"plan"`
+	SubscriptionStatus string  `json:"subscription_status"`
+	CurrentPeriodEnd   *string `json:"current_period_end,omitempty"`
 }
 
 // Signup godoc
@@ -512,19 +515,26 @@ func (h *Handler) userFromCookie(c *gin.Context) (userDTO, bool) {
 	now := time.Now().UTC()
 	var u userDTO
 	var verified sql.NullString
+	var periodEnd sql.NullString
 	err = h.DB.QueryRow(`
-SELECT u.id, u.email, u.email_verified_at, u.created_at
+SELECT u.id, u.email, u.email_verified_at, u.created_at, u.plan, u.subscription_status, u.current_period_end
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = ? AND s.expires_at > ?`,
 		hashToken(raw), now.Format(time.RFC3339),
-	).Scan(&u.ID, &u.Email, &verified, &u.CreatedAt)
+	).Scan(&u.ID, &u.Email, &verified, &u.CreatedAt, &u.Plan, &u.SubscriptionStatus, &periodEnd)
 	if err != nil {
 		h.clearCookie(c)
 		return userDTO{}, false
 	}
 	if verified.Valid {
 		u.EmailVerifiedAt = &verified.String
+	}
+	if u.Plan == "" {
+		u.Plan = "free"
+	}
+	if periodEnd.Valid && periodEnd.String != "" {
+		u.CurrentPeriodEnd = &periodEnd.String
 	}
 	return u, true
 }

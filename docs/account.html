@@ -93,6 +93,20 @@ footer a { color: var(--accent); text-decoration: none; }
   <div id="keys-list" style="margin-top:1rem"></div>
 </div>
 
+<div id="billing-panel" class="panel hidden">
+  <h2>Membership</h2>
+  <p class="hint">Member unlocks higher API rate limits (600/min). Checkout and billing management are hosted by Stripe, branded for A Day Is a Holiday.</p>
+  <p class="user-line" id="billing-status-line">Loading…</p>
+  <div id="billing-upgrade" class="hidden">
+    <button type="button" id="checkout-month-btn">Upgrade — $5/month</button>
+    <button type="button" class="secondary" id="checkout-year-btn">$48/year</button>
+  </div>
+  <div id="billing-manage" class="hidden">
+    <button type="button" id="portal-btn">Manage billing / cancel</button>
+  </div>
+  <p class="msg" id="billing-msg"></p>
+</div>
+
 <div id="auth-panel" class="panel">
   <div class="tabs">
     <button type="button" class="active" data-tab="login">Log in</button>
@@ -184,11 +198,13 @@ async function refreshSession() {
   document.getElementById('session-panel').classList.toggle('hidden', !authed);
   document.getElementById('digest-panel').classList.toggle('hidden', !authed);
   document.getElementById('keys-panel').classList.toggle('hidden', !authed);
+  document.getElementById('billing-panel').classList.toggle('hidden', !authed);
   document.getElementById('auth-panel').classList.toggle('hidden', authed);
   if (authed) {
     document.getElementById('user-email').textContent = data.email;
     await loadDigestPrefs();
     await loadKeys();
+    await loadBilling(data);
     const next = params.get('next');
     if (next && next.startsWith('/oauth/')) {
       location.href = next;
@@ -196,6 +212,56 @@ async function refreshSession() {
     }
   }
   return authed;
+}
+
+async function loadBilling(me) {
+  const { res, data } = await api('/billing/status');
+  const st = res.ok ? data : { plan: me.plan || 'free', subscription_status: me.subscription_status || '' };
+  const plan = st.plan || 'free';
+  const status = st.subscription_status || '';
+  const end = st.current_period_end || me.current_period_end;
+  let line = plan === 'member' ? 'Member' : 'Free';
+  if (status) line += ` · ${status}`;
+  if (end) line += ` · renews/ends ${new Date(end).toLocaleDateString()}`;
+  document.getElementById('billing-status-line').textContent = line;
+  const isMember = plan === 'member';
+  document.getElementById('billing-upgrade').classList.toggle('hidden', isMember);
+  document.getElementById('billing-manage').classList.toggle('hidden', !(st.has_stripe_customer || isMember));
+}
+
+async function startCheckout(interval) {
+  setMsg('billing-msg', 'Redirecting to secure checkout…', true);
+  const { res, data } = await api('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ interval }),
+  });
+  if (!res.ok || !data.url) {
+    setMsg('billing-msg', data.error || 'Checkout failed', false);
+    return;
+  }
+  location.href = data.url;
+}
+
+document.getElementById('checkout-month-btn').addEventListener('click', () => startCheckout('month'));
+document.getElementById('checkout-year-btn').addEventListener('click', () => startCheckout('year'));
+document.getElementById('portal-btn').addEventListener('click', async () => {
+  setMsg('billing-msg', 'Opening billing portal…', true);
+  const { res, data } = await api('/billing/portal', { method: 'POST', body: '{}' });
+  if (!res.ok || !data.url) {
+    setMsg('billing-msg', data.error || 'Portal failed', false);
+    return;
+  }
+  location.href = data.url;
+});
+
+if (params.get('billing') === 'success') {
+  setMsg('billing-msg', 'Welcome — membership activating (may take a few seconds).', true);
+}
+if (params.get('billing') === 'canceled') {
+  setMsg('billing-msg', 'Checkout canceled — you can upgrade anytime.', false);
+}
+if (params.get('billing') === 'portal') {
+  setMsg('billing-msg', 'Billing updated.', true);
 }
 
 async function loadKeys() {
