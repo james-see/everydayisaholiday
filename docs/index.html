@@ -118,7 +118,10 @@
 :root { --bg: #1a1a2e; --fg: #e0e0e0; --accent: #e94560; --card: #16213e; --muted: #8a8a9a; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--fg); line-height: 1.6; -webkit-text-size-adjust: 100%; }
-header { text-align: center; padding: 3rem 1rem 2rem; }
+.site-nav { position: absolute; top: 1rem; right: 1rem; font-family: sans-serif; font-size: 0.85rem; }
+.site-nav a { color: var(--accent); text-decoration: none; }
+.site-nav a:hover { text-decoration: underline; }
+header { position: relative; text-align: center; padding: 3rem 1rem 2rem; }
 header h1 { font-size: clamp(1.6rem, 6vw, 2.5rem); color: var(--accent); margin-bottom: 0.5rem; }
 header p { color: var(--muted); font-style: italic; max-width: 600px; margin: 0 auto; font-size: clamp(0.85rem, 3vw, 1rem); }
 main { max-width: 800px; margin: 0 auto; padding: 0 1rem 3rem; }
@@ -162,7 +165,8 @@ footer a { color: var(--accent); text-decoration: none; }
 
 /* Mobile */
 @media (max-width: 600px) {
-  header { padding: 2rem 1rem 1.5rem; }
+  header { padding: 2.75rem 1rem 1.5rem; }
+  .site-nav { top: 0.75rem; right: 0.75rem; font-size: 0.8rem; }
   main { padding: 0 0.75rem 2rem; }
   #today-card { padding: 1rem; }
   .controls input { min-width: 100px; }
@@ -174,6 +178,9 @@ footer a { color: var(--accent); text-decoration: none; }
 </head>
 <body>
 <header>
+<nav class="site-nav" aria-label="Account">
+  <a id="account-link" href="/account.html">Log in / Sign up</a>
+</nav>
 <h1>A Day Is a Holiday</h1>
 <p>Every day of the year is a holiday somewhere — across all eras, traditions, and cultures.</p>
 </header>
@@ -305,6 +312,16 @@ function renderList() {
 document.getElementById('search').addEventListener('input', renderList);
 document.getElementById('month-filter').addEventListener('change', renderList);
 document.getElementById('cat-filter').addEventListener('change', renderList);
+
+try {
+  const me = await fetch('/auth/me', { credentials: 'same-origin' });
+  if (me.ok) {
+    const user = await me.json();
+    const link = document.getElementById('account-link');
+    link.textContent = user.email || 'Account';
+    link.setAttribute('aria-label', 'Your account');
+  }
+} catch (_) { /* auth optional for browse */ }
 </script>
 </body>
 </html>
