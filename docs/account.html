@@ -451,6 +451,8 @@ if (params.get('verified') === '1') {
 if (params.get('reset')) {
   document.getElementById('reset-tab').classList.remove('hidden');
   showTab('reset');
+} else if (params.get('tab') === 'signup') {
+  showTab('signup');
 }
 
 await refreshSession();

@@ -3,6 +3,7 @@ package digest
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -155,6 +156,9 @@ func (s *Store) Count() int {
 func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subject, text, html string) {
 	label := localDate.Format("Monday, January 2")
 	subject = "Today's holidays — " + label
+	signupURL := siteURL + "/account.html?tab=signup"
+	forwardURL := forwardMailto(siteURL, label)
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "A Day Is a Holiday — %s\n\n", label)
 	if len(holidays) == 0 {
@@ -169,6 +173,9 @@ func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subj
 			b.WriteString(line + "\n")
 		}
 	}
+	b.WriteString("\n---\n")
+	b.WriteString("Forward to a friend: " + forwardURL + "\n")
+	b.WriteString("Did you get this forwarded? Sign up for free to get your own daily in your inbox: " + signupURL + "\n")
 	b.WriteString("\nBrowse the calendar: " + siteURL + "/\n")
 	text = b.String()
 
@@ -188,9 +195,27 @@ func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subj
 		}
 		hb.WriteString("</ul>")
 	}
+	hb.WriteString(`<hr style="border:none;border-top:1px solid #2a2a40;margin:24px 0">`)
+	fmt.Fprintf(&hb, `<p style="margin:0 0 12px"><a href="%s" style="color:#e94560">Forward to a friend</a></p>`, escapeHTML(forwardURL))
+	fmt.Fprintf(&hb,
+		`<p style="font-size:14px;color:#b0b0c0;line-height:1.5;margin:0 0 20px">Did you get this forwarded? <a href="%s" style="color:#e94560">Sign up for free</a> to get your own daily in your inbox.</p>`,
+		escapeHTML(signupURL),
+	)
 	fmt.Fprintf(&hb, `<p><a href="%s/" style="color:#e94560">Open the calendar</a></p>`, siteURL)
 	html = hb.String()
 	return subject, text, html
+}
+
+// forwardMailto builds a mailto share link so readers can forward the dig to a friend.
+func forwardMailto(siteURL, dateLabel string) string {
+	subject := "A Day Is a Holiday — " + dateLabel
+	body := "Thought you'd enjoy today's holidays from A Day Is a Holiday.\n\n" +
+		"Sign up free for your own daily digest: " + siteURL + "/account.html?tab=signup\n" +
+		"Browse the calendar: " + siteURL + "/\n"
+	q := url.Values{}
+	q.Set("subject", subject)
+	q.Set("body", body)
+	return "mailto:?" + q.Encode()
 }
 
 func escapeHTML(s string) string {
