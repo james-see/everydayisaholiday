@@ -3,6 +3,7 @@ package digest
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -152,9 +153,48 @@ func (s *Store) Count() int {
 	return n
 }
 
-func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subject, text, html string) {
+// SignupURL is the free account/digest signup page.
+func SignupURL(siteURL string) string {
+	return siteURL + "/account.html?signup=1&utm_source=digest&utm_medium=email&utm_campaign=forwarded"
+}
+
+// ForwardMailto builds a mailto: link prefilled with today's highlights and a signup link.
+func ForwardMailto(label string, holidays []Holiday, siteURL string) string {
+	subject := "Every day is a holiday — " + label
+	var b strings.Builder
+	b.WriteString("Thought you'd enjoy this: today (" + label + ") is")
+	if len(holidays) == 0 {
+		b.WriteString(" a holiday somewhere.")
+	} else {
+		n := len(holidays)
+		if n > 3 {
+			n = 3
+		}
+		names := make([]string, 0, n)
+		for _, h := range holidays[:n] {
+			names = append(names, h.Name)
+		}
+		b.WriteString(" " + strings.Join(names, ", "))
+		if len(holidays) > n {
+			fmt.Fprintf(&b, ", and %d more", len(holidays)-n)
+		}
+		b.WriteString(".")
+	}
+	b.WriteString("\n\nGet your own free daily holiday email: " + SignupURL(siteURL) + "\n")
+	return "mailto:?subject=" + mailtoEscape(subject) + "&body=" + mailtoEscape(b.String())
+}
+
+func mailtoEscape(s string) string {
+	return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+}
+
+// FormatDigest renders the daily email. unsubURL may be empty (e.g. previews).
+func FormatDigest(localDate time.Time, holidays []Holiday, siteURL, unsubURL string) (subject, text, html string) {
 	label := localDate.Format("Monday, January 2")
 	subject = "Today's holidays — " + label
+	signup := SignupURL(siteURL)
+	forward := ForwardMailto(label, holidays, siteURL)
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "A Day Is a Holiday — %s\n\n", label)
 	if len(holidays) == 0 {
@@ -169,16 +209,39 @@ func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subj
 			b.WriteString(line + "\n")
 		}
 	}
+	b.WriteString("\n---\n")
+	b.WriteString("Know someone who'd love this? Forward this email to a friend, or share: " + siteURL + "/\n")
+	b.WriteString("Did you get this forwarded? Sign up for free to get your own daily in your inbox: " + signup + "\n")
+	b.WriteString("---\n")
 	b.WriteString("\nBrowse the calendar: " + siteURL + "/\n")
+	if unsubURL != "" {
+		b.WriteString("\nUnsubscribe: " + unsubURL + "\n")
+	}
 	text = b.String()
 
+	const (
+		bg     = "#1a1a2e"
+		card   = "#22223b"
+		accent = "#e94560"
+		fg     = "#e0e0e0"
+		muted  = "#8a8a9a"
+		font   = "Georgia,'Times New Roman',serif"
+	)
 	var hb strings.Builder
-	hb.WriteString("<html><body style=\"font-family:Georgia,serif;background:#1a1a2e;color:#e0e0e0;padding:24px\">")
-	fmt.Fprintf(&hb, "<h1 style=\"color:#e94560\">A Day Is a Holiday</h1><p>%s</p>", label)
+	hb.WriteString(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>`)
+	fmt.Fprintf(&hb, `<body style="margin:0;padding:0;background:%s;color:%s;font-family:%s">`, bg, fg, font)
+	fmt.Fprintf(&hb, `<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="%s" style="background:%s"><tr><td align="center" style="padding:24px 12px">`, bg, bg)
+	hb.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px">`)
+
+	fmt.Fprintf(&hb, `<tr><td style="padding:0 0 16px;font-family:%s;font-size:13px;color:%s;text-align:center">Got this from a friend? <a href="%s" style="color:%s;text-decoration:underline">Get your own free daily</a> · <a href="%s" style="color:%s;text-decoration:underline">Forward to a friend</a></td></tr>`,
+		font, muted, escapeHTML(signup), accent, escapeHTML(forward), accent)
+
+	fmt.Fprintf(&hb, `<tr><td style="padding:0 8px;font-family:%s;color:%s">`, font, fg)
+	fmt.Fprintf(&hb, `<h1 style="margin:0 0 8px;font-family:%s;font-size:28px;color:%s">A Day Is a Holiday</h1><p style="margin:0 0 16px;font-size:16px;color:%s">%s</p>`, font, accent, fg, escapeHTML(label))
 	if len(holidays) == 0 {
-		hb.WriteString("<p>No holidays matched your filters today.</p>")
+		hb.WriteString(`<p style="font-size:16px">No holidays matched your filters today.</p>`)
 	} else {
-		hb.WriteString("<ul>")
+		hb.WriteString(`<ul style="margin:0 0 16px;padding-left:20px;font-size:16px;line-height:1.5">`)
 		for _, h := range holidays {
 			fmt.Fprintf(&hb, "<li><strong>%s</strong> — %s", escapeHTML(h.Name), escapeHTML(h.Category))
 			if h.Country != "" {
@@ -188,7 +251,23 @@ func FormatDigest(localDate time.Time, holidays []Holiday, siteURL string) (subj
 		}
 		hb.WriteString("</ul>")
 	}
-	fmt.Fprintf(&hb, `<p><a href="%s/" style="color:#e94560">Open the calendar</a></p>`, siteURL)
+	hb.WriteString(`</td></tr>`)
+
+	fmt.Fprintf(&hb, `<tr><td style="padding:16px 0"><table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="%s" style="background:%s;border:1px solid %s;border-radius:8px"><tr><td style="padding:20px;font-family:%s;color:%s">`, card, card, accent, font, fg)
+	fmt.Fprintf(&hb, `<p style="margin:0 0 8px;font-size:18px;color:%s"><strong>Know someone who'd love this?</strong></p>`, accent)
+	fmt.Fprintf(&hb, `<p style="margin:0 0 16px;font-size:15px;line-height:1.5">Forward today's email to a friend, or share <a href="%s/" style="color:%s">adayisaholiday.com</a>.</p>`, siteURL, accent)
+	fmt.Fprintf(&hb, `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="%s" style="background:%s;border-radius:6px"><a href="%s" style="display:inline-block;padding:10px 18px;font-family:%s;font-size:15px;color:#ffffff;text-decoration:none">Forward to a friend</a></td></tr></table>`,
+		accent, accent, escapeHTML(forward), font)
+	fmt.Fprintf(&hb, `<p style="margin:20px 0 0;padding-top:16px;border-top:1px solid #3a3a55;font-size:15px;line-height:1.5"><strong>Did you get this forwarded?</strong> <a href="%s" style="color:%s">Sign up for free</a> to get your own daily in your inbox.</p>`,
+		escapeHTML(signup), accent)
+	hb.WriteString(`</td></tr></table></td></tr>`)
+
+	fmt.Fprintf(&hb, `<tr><td style="padding:8px;font-family:%s;font-size:12px;color:%s;text-align:center">`, font, muted)
+	fmt.Fprintf(&hb, `<a href="%s/" style="color:%s">Open the calendar</a>`, siteURL, accent)
+	if unsubURL != "" {
+		fmt.Fprintf(&hb, ` · <a href="%s" style="color:%s">Unsubscribe</a>`, escapeHTML(unsubURL), muted)
+	}
+	hb.WriteString(`</td></tr></table></td></tr></table></body></html>`)
 	html = hb.String()
 	return subject, text, html
 }
