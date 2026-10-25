@@ -111,7 +111,7 @@ func main() {
 		authGroup.POST("/api-keys/:id/revoke", keysH.Revoke)
 	}
 
-	r.GET("/unsubscribe", digestH.Unsubscribe)
+	r.GET("/unsubscribe", digestH.UnsubscribeConfirm)
 	r.POST("/unsubscribe", digestH.Unsubscribe)
 	r.POST("/internal/digest/run", digestH.RunNow)
 
