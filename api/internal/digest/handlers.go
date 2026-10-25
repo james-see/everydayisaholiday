@@ -3,7 +3,9 @@ package digest
 import (
 	"database/sql"
 	"encoding/json"
+	"html"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -128,14 +130,65 @@ func (h *Handler) Categories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"categories": h.Holidays.Categories()})
 }
 
+const pageStyle = `font-family:Georgia,serif;background:#1a1a2e;color:#e0e0e0;padding:2rem;text-align:center`
+
+func unsubPage(c *gin.Context, status int, body string) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.Header("Cache-Control", "no-store")
+	c.Header("X-Robots-Tag", "noindex")
+	c.String(status, `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribe — A Day Is a Holiday</title></head><body style="`+pageStyle+`">`+body+`</body></html>`)
+}
+
+// UnsubscribeConfirm godoc
+// @Summary Unsubscribe confirmation page (does not unsubscribe)
+// @Description The email footer link lands here so a forwarded copy cannot unsubscribe the original recipient with a single click. Confirming POSTs to /unsubscribe.
+// @Tags digest
+// @Produce html
+// @Param token query string true "unsubscribe token"
+// @Success 200 {string} string "confirmation page"
+// @Failure 400 {string} string "invalid token"
+// @Router /unsubscribe [get]
+func (h *Handler) UnsubscribeConfirm(c *gin.Context) {
+	token := strings.TrimSpace(c.Query("token"))
+	var enabled int
+	err := sql.ErrNoRows
+	if token != "" {
+		err = h.DB.QueryRow(`SELECT enabled FROM email_prefs WHERE unsub_token = ?`, token).Scan(&enabled)
+	}
+	if err == sql.ErrNoRows {
+		unsubPage(c, http.StatusBadRequest, `<h1 style="color:#e94560">Link not valid</h1>
+<p>This unsubscribe link is invalid or has expired. You can manage emails from your <a href="/account.html" style="color:#e94560">account</a>.</p>`)
+		return
+	}
+	if err != nil {
+		unsubPage(c, http.StatusInternalServerError, `<h1 style="color:#e94560">Something went wrong</h1><p>Please try again later.</p>`)
+		return
+	}
+	if enabled == 0 {
+		unsubPage(c, http.StatusOK, `<h1 style="color:#e94560">Already unsubscribed</h1>
+<p>This address no longer receives the daily holiday digest.</p>
+<p><a href="/" style="color:#e94560">Back to calendar</a></p>`)
+		return
+	}
+	action := "/unsubscribe?token=" + url.QueryEscape(token)
+	unsubPage(c, http.StatusOK, `<h1 style="color:#e94560">Unsubscribe from the daily digest?</h1>
+<p>Press the button to stop receiving the daily holiday email at the address it was sent to.</p>
+<form method="post" action="`+html.EscapeString(action)+`" style="margin:1.5rem 0">
+<button type="submit" style="font-family:Georgia,serif;font-size:1rem;background:#e94560;color:#fff;border:0;border-radius:6px;padding:.7rem 1.4rem;cursor:pointer">Unsubscribe</button>
+</form>
+<p style="color:#8a8a9a">Got this email from a friend? You don't need to do anything here — <a href="/account.html?signup=1" style="color:#e94560">sign up for your own free daily</a> instead.</p>
+<p><a href="/" style="color:#e94560">Back to calendar</a></p>`)
+}
+
 // Unsubscribe godoc
-// @Summary One-click unsubscribe from daily digest
+// @Summary Unsubscribe from daily digest
+// @Description Handles the confirmation form and RFC 8058 one-click POSTs (List-Unsubscribe=One-Click).
 // @Tags digest
 // @Produce json
 // @Param token query string true "unsubscribe token"
 // @Success 200 {object} map[string]any
 // @Failure 400 {object} map[string]string
-// @Router /unsubscribe [get]
+// @Router /unsubscribe [post]
 func (h *Handler) Unsubscribe(c *gin.Context) {
 	token := strings.TrimSpace(c.Query("token"))
 	if token == "" {
@@ -164,12 +217,9 @@ UPDATE email_prefs SET enabled = 0, updated_at = ? WHERE unsub_token = ?`, now, 
 	}
 	accept := c.GetHeader("Accept")
 	if strings.Contains(accept, "text/html") || c.Query("format") == "html" {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusOK, `<!DOCTYPE html><html><body style="font-family:Georgia,serif;background:#1a1a2e;color:#e0e0e0;padding:2rem;text-align:center">
-<h1 style="color:#e94560">Unsubscribed</h1>
+		unsubPage(c, http.StatusOK, `<h1 style="color:#e94560">Unsubscribed</h1>
 <p>You will no longer receive the daily holiday digest.</p>
-<p><a href="/" style="color:#e94560">Back to calendar</a></p>
-</body></html>`)
+<p><a href="/" style="color:#e94560">Back to calendar</a></p>`)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "unsubscribed"})
