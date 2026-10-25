@@ -70,10 +70,8 @@ WHERE p.enabled = 1
 		var cats []string
 		_ = json.Unmarshal([]byte(x.catsJSON), &cats)
 		holidays := r.Holidays.ForDate(int(local.Month()), local.Day(), cats)
-		subject, text, html := FormatDigest(local, holidays, r.Cfg.PublicBaseURL)
 		unsubURL := r.Cfg.PublicBaseURL + "/unsubscribe?token=" + x.unsub
-		text += "\nUnsubscribe: " + unsubURL + "\n"
-		html = html + `<p style="font-size:12px;color:#8a8a9a"><a href="` + unsubURL + `" style="color:#8a8a9a">Unsubscribe</a></p></body></html>`
+		subject, text, html := FormatDigest(local, holidays, r.Cfg.PublicBaseURL, unsubURL)
 
 		err = r.Mailer.SendMessage(mail.Message{
 			To:      x.email,

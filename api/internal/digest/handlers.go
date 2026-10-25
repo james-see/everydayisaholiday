@@ -218,7 +218,7 @@ func (h *Handler) Preview(c *gin.Context) {
 	}
 	local := time.Now().In(loc)
 	holidays := h.Holidays.ForDate(int(local.Month()), local.Day(), p.Categories)
-	subject, text, _ := FormatDigest(local, holidays, h.Cfg.PublicBaseURL)
+	subject, text, _ := FormatDigest(local, holidays, h.Cfg.PublicBaseURL, "")
 	c.JSON(http.StatusOK, gin.H{
 		"email":       email,
 		"local_date":  local.Format("2006-01-02"),
